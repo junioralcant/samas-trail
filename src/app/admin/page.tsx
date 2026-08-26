@@ -30,11 +30,23 @@ type Stats = {
   receita: number;
 };
 
+const eventDate = process.env.NEXT_PUBLIC_EVENT_DATE ?? "";
+
 const formatarPreco = (valor: number) =>
   valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const formatarCpf = (cpf: string) =>
   cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+
+const percentual = (parte: number, total: number) =>
+  total > 0 ? `${Math.round((parte / total) * 100)}% do total` : "—";
+
+const LogoLinha = () => (
+  <div className="logo-linha display">
+    <span className="logo-linha-samas">SAMAS</span>
+    <span className="logo-linha-trail">TRAIL</span>
+  </div>
+);
 
 export default function AdminPage() {
   const [autenticado, setAutenticado] = useState<boolean | null>(null);
@@ -45,6 +57,7 @@ export default function AdminPage() {
   const [filtroDistancia, setFiltroDistancia] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("");
   const [busca, setBusca] = useState("");
+  const [atualizadoAs, setAtualizadoAs] = useState("");
 
   const carregarInscricoes = useCallback(async () => {
     const params = new URLSearchParams();
@@ -65,6 +78,12 @@ export default function AdminPage() {
     const data = await response.json();
     setInscricoes(data.inscricoes);
     setStats(data.stats);
+    setAtualizadoAs(
+      new Date().toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    );
     setAutenticado(true);
   }, [filtroDistancia, filtroStatus, busca]);
 
@@ -118,28 +137,45 @@ export default function AdminPage() {
     await carregarInscricoes();
   };
 
+  const limparFiltros = () => {
+    setBusca("");
+    setFiltroDistancia("");
+    setFiltroStatus("");
+  };
+
   if (autenticado === null) {
-    return <div className="vazio">Carregando...</div>;
+    return <div className="carregando">Carregando...</div>;
   }
 
   if (!autenticado) {
     return (
-      <main className="login-wrapper">
+      <main className="login-wrapper textura">
         <form className="login-card" onSubmit={fazerLogin}>
-          <h1>Painel do organizador</h1>
-          <div className="campo">
-            <label htmlFor="senha">Senha</label>
+          <div className="login-cabecalho">
+            <LogoLinha />
+            <div className="login-titulo display">Painel do organizador</div>
+            <div className="login-subtexto">
+              Acesso restrito à equipe da prova.
+            </div>
+          </div>
+          <div className="login-divisor" />
+          <label className="campo">
+            <span className="campo-rotulo">Senha</span>
             <input
-              id="senha"
               type="password"
               required
               value={senha}
               onChange={(event) => setSenha(event.target.value)}
-              placeholder="Senha de administração"
+              placeholder="••••••••"
             />
-          </div>
-          {erroLogin && <div className="mensagem-erro">{erroLogin}</div>}
-          <button className="botao-primario" type="submit">
+          </label>
+          {erroLogin && (
+            <div className="banner-erro">
+              <div className="banner-erro-icone">!</div>
+              <div className="banner-erro-titulo">{erroLogin}</div>
+            </div>
+          )}
+          <button className="botao-cta" type="submit">
             Entrar
           </button>
         </form>
@@ -150,14 +186,22 @@ export default function AdminPage() {
   return (
     <main>
       <header className="admin-topo">
-        <h1>🏃 Painel de inscrições</h1>
-        <div className="acoes">
+        <div className="admin-marca">
+          <LogoLinha />
+          <div className="admin-marca-divisor" />
+          <div className="admin-marca-titulo">Painel de inscrições</div>
+        </div>
+        <div className="admin-acoes">
           <a href="/api/admin/export">
-            <button className="botao-secundario" type="button">
+            <button className="botao-vermelho" type="button">
               Exportar CSV
             </button>
           </a>
-          <button className="botao-perigo" type="button" onClick={fazerLogout}>
+          <button
+            className="botao-contorno"
+            type="button"
+            onClick={fazerLogout}
+          >
             Sair
           </button>
         </div>
@@ -167,28 +211,46 @@ export default function AdminPage() {
         {stats && (
           <div className="stats-grid">
             <div className="stat-card">
-              <div className="rotulo">Total de inscritos</div>
-              <div className="valor">{stats.total}</div>
+              <div className="stat-rotulo">Total de inscritos</div>
+              <div className="stat-valor display">{stats.total}</div>
+              <div className="stat-nota">prova em {eventDate}</div>
             </div>
             <div className="stat-card">
-              <div className="rotulo">8km</div>
-              <div className="valor">{stats.total8km}</div>
+              <div className="stat-rotulo">8 km</div>
+              <div className="stat-valor display">{stats.total8km}</div>
+              <div className="stat-nota">
+                {percentual(stats.total8km, stats.total)}
+              </div>
             </div>
             <div className="stat-card">
-              <div className="rotulo">18km</div>
-              <div className="valor">{stats.total18km}</div>
+              <div className="stat-rotulo">18 km</div>
+              <div className="stat-valor display">{stats.total18km}</div>
+              <div className="stat-nota">
+                {percentual(stats.total18km, stats.total)}
+              </div>
             </div>
             <div className="stat-card">
-              <div className="rotulo">Pagos</div>
-              <div className="valor">{stats.pagos}</div>
+              <div className="stat-rotulo">Pagos</div>
+              <div className="stat-valor display">{stats.pagos}</div>
+              <div className="stat-nota">
+                {stats.total > 0
+                  ? `${Math.round(
+                      (stats.pagos / stats.total) * 100,
+                    )}% confirmados`
+                  : "—"}
+              </div>
             </div>
             <div className="stat-card">
-              <div className="rotulo">Pendentes</div>
-              <div className="valor">{stats.pendentes}</div>
+              <div className="stat-rotulo">Pendentes</div>
+              <div className="stat-valor display">{stats.pendentes}</div>
+              <div className="stat-nota">aguardando confirmação</div>
             </div>
             <div className="stat-card">
-              <div className="rotulo">Receita confirmada</div>
-              <div className="valor">{formatarPreco(stats.receita)}</div>
+              <div className="stat-rotulo">Receita confirmada</div>
+              <div className="stat-valor display">
+                {formatarPreco(stats.receita)}
+              </div>
+              <div className="stat-nota">pagamentos aprovados</div>
             </div>
           </div>
         )}
@@ -218,39 +280,79 @@ export default function AdminPage() {
           </select>
         </div>
 
-        <div className="tabela-wrapper">
-          {inscricoes.length === 0 ? (
-            <div className="vazio">Nenhuma inscrição encontrada.</div>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Atleta</th>
-                  <th>CPF</th>
-                  <th>Contato</th>
-                  <th>Camiseta</th>
-                  <th>Equipe</th>
-                  <th>Distância</th>
-                  <th>Valor</th>
-                  <th>Status</th>
-                  <th>Inscrito em</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {inscricoes.map((inscricao) => (
-                  <tr key={inscricao.id}>
-                    <td>{inscricao.nome}</td>
-                    <td>{formatarCpf(inscricao.cpf)}</td>
-                    <td>
-                      {inscricao.email}
-                      <br />
-                      {inscricao.telefone}
-                    </td>
-                    <td>{inscricao.tamanho_camiseta}</td>
-                    <td>{inscricao.equipe ?? "—"}</td>
-                    <td>
+        <div className="tabela-card">
+          <div className="tabela-scroll">
+            <div className="tabela-grid">
+              <div className="tabela-colunas tabela-cabecalho">
+                <div>Atleta</div>
+                <div>CPF</div>
+                <div>Contato</div>
+                <div>Camiseta</div>
+                <div>Equipe</div>
+                <div>Distância</div>
+                <div>Valor</div>
+                <div>Status</div>
+                <div>Inscrito em</div>
+                <div>Ações</div>
+              </div>
+              {inscricoes.length === 0 ? (
+                <div className="estado-vazio">
+                  <svg
+                    width="70"
+                    height="26"
+                    viewBox="0 0 70 26"
+                    fill="none"
+                    style={{ opacity: 0.4 }}
+                  >
+                    <path
+                      d="M3 20C16 5 28 24 42 12s16-9 25-2"
+                      stroke="#FFFFFF"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeDasharray="0.1 10"
+                    />
+                  </svg>
+                  <div className="estado-vazio-titulo display">
+                    Nenhuma inscrição encontrada
+                  </div>
+                  <div className="estado-vazio-texto">
+                    Ajuste a busca ou limpe os filtros de distância e status.
+                  </div>
+                  <button
+                    className="botao-contorno"
+                    type="button"
+                    onClick={limparFiltros}
+                  >
+                    Limpar filtros
+                  </button>
+                </div>
+              ) : (
+                inscricoes.map((inscricao) => (
+                  <div
+                    className="tabela-colunas tabela-linha"
+                    key={inscricao.id}
+                  >
+                    <div className="celula-nome">{inscricao.nome}</div>
+                    <div className="celula-numerica">
+                      {formatarCpf(inscricao.cpf)}
+                    </div>
+                    <div className="celula-contato">
+                      <span className="celula-contato-email">
+                        {inscricao.email}
+                      </span>
+                      <span className="celula-contato-fone">
+                        {inscricao.telefone}
+                      </span>
+                    </div>
+                    <div className="celula-secundaria">
+                      {inscricao.tamanho_camiseta}
+                    </div>
+                    <div className="celula-secundaria">
+                      {inscricao.equipe ?? "—"}
+                    </div>
+                    <div>
                       <select
+                        className="select-tabela"
                         value={inscricao.distancia}
                         onChange={(event) =>
                           atualizarInscricao(inscricao.id, {
@@ -261,43 +363,53 @@ export default function AdminPage() {
                         <option value="8km">8km</option>
                         <option value="18km">18km</option>
                       </select>
-                    </td>
-                    <td>{formatarPreco(inscricao.valor)}</td>
-                    <td>
+                    </div>
+                    <div className="celula-valor">
+                      {formatarPreco(inscricao.valor)}
+                    </div>
+                    <div>
                       <span className={`badge ${inscricao.status_pagamento}`}>
                         {inscricao.status_pagamento}
                       </span>
-                    </td>
-                    <td>{inscricao.criado_em}</td>
-                    <td>
-                      <div className="acoes">
-                        <select
-                          value={inscricao.status_pagamento}
-                          onChange={(event) =>
-                            atualizarInscricao(inscricao.id, {
-                              statusPagamento: event.target
-                                .value as StatusPagamento,
-                            })
-                          }
-                        >
-                          <option value="pendente">pendente</option>
-                          <option value="pago">pago</option>
-                          <option value="cancelado">cancelado</option>
-                        </select>
-                        <button
-                          className="botao-perigo"
-                          type="button"
-                          onClick={() => excluirInscricao(inscricao)}
-                        >
-                          Excluir
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                    </div>
+                    <div className="celula-data">{inscricao.criado_em}</div>
+                    <div className="celula-acoes">
+                      <select
+                        className="select-tabela"
+                        value={inscricao.status_pagamento}
+                        onChange={(event) =>
+                          atualizarInscricao(inscricao.id, {
+                            statusPagamento: event.target
+                              .value as StatusPagamento,
+                          })
+                        }
+                      >
+                        <option value="pendente">Pendente</option>
+                        <option value="pago">Pago</option>
+                        <option value="cancelado">Cancelado</option>
+                      </select>
+                      <button
+                        className="botao-excluir"
+                        type="button"
+                        onClick={() => excluirInscricao(inscricao)}
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div className="tabela-rodape">
+                <span>
+                  Mostrando {inscricoes.length} de {stats?.total ?? 0}{" "}
+                  inscrições
+                </span>
+                <span>
+                  {atualizadoAs ? `Atualizado às ${atualizadoAs}` : ""}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>

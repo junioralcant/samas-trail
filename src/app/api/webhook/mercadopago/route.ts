@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { enviarEmailInscricaoConfirmada } from "@/lib/emailInscricaoConfirmada";
 import { getPaymentClient } from "@/lib/mercadopago";
-import type { StatusPagamento } from "@/lib/types";
+import type { Inscricao, StatusPagamento } from "@/lib/types";
 
 const MP_STATUS_PARA_LOCAL: Record<string, StatusPagamento> = {
   approved: "pago",
@@ -50,11 +51,25 @@ export async function POST(request: Request) {
       : undefined;
 
     if (inscricaoId && status) {
-      getDb()
-        .prepare(
-          "UPDATE inscricoes SET status_pagamento = ?, mp_payment_id = ? WHERE id = ?",
-        )
-        .run(status, paymentId, Number(inscricaoId));
+      const db = getDb();
+      const anterior = db
+        .prepare("SELECT * FROM inscricoes WHERE id = ?")
+        .get(Number(inscricaoId)) as unknown as Inscricao | undefined;
+
+      db.prepare(
+        "UPDATE inscricoes SET status_pagamento = ?, mp_payment_id = ? WHERE id = ?",
+      ).run(status, paymentId, Number(inscricaoId));
+
+      if (
+        anterior &&
+        anterior.status_pagamento !== "pago" &&
+        status === "pago"
+      ) {
+        await enviarEmailInscricaoConfirmada({
+          ...anterior,
+          status_pagamento: "pago",
+        });
+      }
     }
   } catch (error) {
     console.error("Erro ao processar webhook Mercado Pago", error);

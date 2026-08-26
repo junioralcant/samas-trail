@@ -20,6 +20,12 @@ export type Inscricao = {
   criado_em: string;
 };
 
+export type EnvioEmailParams = {
+  para: string;
+  assunto: string;
+  html: string;
+};
+
 export type NovaInscricaoPayload = {
   nome: string;
   cpf: string;

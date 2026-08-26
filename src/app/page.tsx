@@ -26,7 +26,6 @@ const FORM_INICIAL: FormState = {
   equipe: "",
 };
 
-const eventName = process.env.NEXT_PUBLIC_EVENT_NAME ?? "Corrida de Trilha";
 const eventDate = process.env.NEXT_PUBLIC_EVENT_DATE ?? "Data a definir";
 const eventLocation =
   process.env.NEXT_PUBLIC_EVENT_LOCATION ?? "Local a definir";
@@ -56,6 +55,8 @@ export default function InscricaoPage() {
   const [form, setForm] = useState<FormState>(FORM_INICIAL);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+
+  const preco = distancia === "8km" ? preco8km : preco18km;
 
   const atualizarCampo =
     (campo: keyof FormState) =>
@@ -95,121 +96,196 @@ export default function InscricaoPage() {
 
   return (
     <main>
-      <section className="hero">
-        <h1>{eventName}</h1>
-        <p className="tagline">
-          Prova de trilha — escolha seu desafio: 8km ou 18km
-        </p>
-        <div className="meta">
-          <span>📅 {eventDate}</span>
-          <span>📍 {eventLocation}</span>
+      <section className="hero textura">
+        <div className="hero-splatter" />
+        <div className="hero-splatter-branco" />
+        <svg
+          className="hero-trilha"
+          width="1180"
+          height="120"
+          viewBox="0 0 1180 120"
+          fill="none"
+        >
+          <path
+            d="M8 96C160 22 300 108 470 64s260-92 420-24 200 22 282-14"
+            stroke="#FFFFFF"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeDasharray="0.1 16"
+          />
+        </svg>
+        <div className="hero-conteudo">
+          <div className="logo-hero display">
+            <div className="logo-hero-samas">SAMAS</div>
+            <div className="logo-hero-trail-linha">
+              <div className="logo-hero-barra" />
+              <div className="logo-hero-trail">TRAIL</div>
+              <div className="logo-hero-barra" />
+            </div>
+            <svg
+              className="logo-hero-trilha-svg"
+              width="150"
+              height="20"
+              viewBox="0 0 150 20"
+              fill="none"
+            >
+              <path
+                d="M3 15C22 3 38 18 58 9s34-8 52 3 30-1 34-5"
+                stroke="#FFFFFF"
+                strokeWidth="2.6"
+                strokeLinecap="round"
+                strokeDasharray="0.1 9"
+              />
+            </svg>
+          </div>
+          <div className="hero-subtitulo">Prova de trilha — 8km e 18km</div>
+          <div className="hero-chips">
+            <div className="chip">📅 {eventDate}</div>
+            <div className="chip">📍 {eventLocation}</div>
+          </div>
         </div>
       </section>
 
-      <div className="container">
-        <div className="cards-distancia">
-          <button
-            type="button"
-            className={`card-distancia ${
-              distancia === "8km" ? "selecionada" : ""
-            }`}
-            onClick={() => setDistancia("8km")}
-          >
-            <div className="km">8km</div>
-            <div className="descricao">
-              Percurso leve para quem está começando na trilha
-            </div>
-            <div className="preco">{formatarPreco(preco8km)}</div>
-          </button>
-          <button
-            type="button"
-            className={`card-distancia ${
-              distancia === "18km" ? "selecionada" : ""
-            }`}
-            onClick={() => setDistancia("18km")}
-          >
-            <div className="km">18km</div>
-            <div className="descricao">
-              Desafio completo com subidas técnicas e travessias
-            </div>
-            <div className="preco">{formatarPreco(preco18km)}</div>
-          </button>
-        </div>
+      <div className="divisor-rasgado" />
 
-        <form className="form-card" onSubmit={enviarInscricao}>
-          <h2>Dados do atleta — {distancia}</h2>
+      <div className="conteudo">
+        <section className="coluna">
+          <h2 className="titulo-secao display">Escolha sua distância</h2>
+          <div className="cards-distancia">
+            <button
+              type="button"
+              className={`card-distancia textura ${
+                distancia === "8km" ? "selecionada" : ""
+              }`}
+              onClick={() => setDistancia("8km")}
+            >
+              <div className="card-conteudo">
+                <div>
+                  <div className="card-km display">8KM</div>
+                  <div className="card-descricao">
+                    Percurso leve, ideal para quem está estreando na trilha.
+                  </div>
+                </div>
+                <div className="card-preco-bloco">
+                  <div className="card-rotulo-inscricao">Inscrição</div>
+                  <div className="card-preco display">
+                    {formatarPreco(preco8km)}
+                  </div>
+                </div>
+              </div>
+              <div className="card-veu" />
+              <div className="card-anel" />
+            </button>
+            <button
+              type="button"
+              className={`card-distancia textura ${
+                distancia === "18km" ? "selecionada" : ""
+              }`}
+              onClick={() => setDistancia("18km")}
+            >
+              <div className="card-conteudo">
+                <div>
+                  <div className="card-km display">18KM</div>
+                  <div className="card-descricao">
+                    Desafio completo, com subidas técnicas e terreno solto.
+                  </div>
+                </div>
+                <div className="card-preco-bloco">
+                  <div className="card-rotulo-inscricao">Inscrição</div>
+                  <div className="card-preco display">
+                    {formatarPreco(preco18km)}
+                  </div>
+                </div>
+              </div>
+              <div className="card-veu" />
+              <div className="card-anel" />
+            </button>
+          </div>
+          <div className="info-prova">
+            <svg width="40" height="20" viewBox="0 0 40 20" fill="none">
+              <path
+                d="M2 15C10 4 18 18 26 8s8-4 12 0"
+                stroke="#E10600"
+                strokeWidth="2.6"
+                strokeLinecap="round"
+              />
+            </svg>
+            <div className="info-prova-texto">
+              Largada no Povoado Água Preta. Hidratação no percurso e resgate em
+              toda a prova.
+            </div>
+          </div>
+        </section>
+
+        <form className="coluna" onSubmit={enviarInscricao}>
+          <h2 className="titulo-secao display">Dados do atleta</h2>
           <div className="grid-form">
-            <div className="campo" style={{ gridColumn: "1 / -1" }}>
-              <label htmlFor="nome">Nome completo *</label>
+            <label className="campo campo-largo">
+              <span className="campo-rotulo">Nome completo</span>
               <input
-                id="nome"
                 required
                 value={form.nome}
                 onChange={atualizarCampo("nome")}
-                placeholder="Seu nome completo"
+                placeholder="Ex.: João Pereira da Silva"
               />
-            </div>
-            <div className="campo">
-              <label htmlFor="cpf">CPF *</label>
+            </label>
+            <label className="campo">
+              <span className="campo-rotulo">CPF</span>
               <input
-                id="cpf"
                 required
                 inputMode="numeric"
                 value={form.cpf}
                 onChange={atualizarCampo("cpf")}
                 placeholder="000.000.000-00"
               />
-            </div>
-            <div className="campo">
-              <label htmlFor="email">E-mail *</label>
+            </label>
+            <label className="campo">
+              <span className="campo-rotulo">E-mail</span>
               <input
-                id="email"
                 type="email"
                 required
                 value={form.email}
                 onChange={atualizarCampo("email")}
                 placeholder="voce@email.com"
               />
-            </div>
-            <div className="campo">
-              <label htmlFor="telefone">Telefone / WhatsApp *</label>
+            </label>
+            <label className="campo">
+              <span className="campo-rotulo">Telefone / WhatsApp</span>
               <input
-                id="telefone"
                 required
                 inputMode="numeric"
                 value={form.telefone}
                 onChange={atualizarCampo("telefone")}
-                placeholder="(00) 00000-0000"
+                placeholder="(98) 99999-9999"
               />
-            </div>
-            <div className="campo">
-              <label htmlFor="dataNascimento">Data de nascimento *</label>
+            </label>
+            <label className="campo">
+              <span className="campo-rotulo">Data de nascimento</span>
               <input
-                id="dataNascimento"
                 type="date"
                 required
                 value={form.dataNascimento}
                 onChange={atualizarCampo("dataNascimento")}
               />
-            </div>
-            <div className="campo">
-              <label htmlFor="sexo">Sexo *</label>
+            </label>
+            <label className="campo">
+              <span className="campo-rotulo">Sexo</span>
               <select
-                id="sexo"
                 required
                 value={form.sexo}
                 onChange={atualizarCampo("sexo")}
               >
                 <option value="">Selecione</option>
-                <option value="feminino">Feminino</option>
                 <option value="masculino">Masculino</option>
-                <option value="outro">Outro</option>
+                <option value="feminino">Feminino</option>
+                <option value="prefiro-nao-informar">
+                  Prefiro não informar
+                </option>
               </select>
-            </div>
-            <div className="campo">
-              <label htmlFor="tamanhoCamiseta">Tamanho da camiseta *</label>
+            </label>
+            <label className="campo">
+              <span className="campo-rotulo">Tamanho da camiseta</span>
               <select
-                id="tamanhoCamiseta"
                 required
                 value={form.tamanhoCamiseta}
                 onChange={atualizarCampo("tamanhoCamiseta")}
@@ -221,27 +297,43 @@ export default function InscricaoPage() {
                 <option value="G">G</option>
                 <option value="GG">GG</option>
               </select>
-            </div>
-            <div className="campo">
-              <label htmlFor="equipe">Equipe / Assessoria (opcional)</label>
+            </label>
+            <label className="campo">
+              <span className="campo-rotulo">
+                Equipe / Assessoria (opcional)
+              </span>
               <input
-                id="equipe"
                 value={form.equipe}
                 onChange={atualizarCampo("equipe")}
                 placeholder="Nome da equipe"
               />
-            </div>
+            </label>
           </div>
 
-          {erro && <div className="mensagem-erro">{erro}</div>}
+          {erro && (
+            <div className="banner-erro">
+              <div className="banner-erro-icone">!</div>
+              <div>
+                <div className="banner-erro-titulo">{erro}</div>
+                <div className="banner-erro-texto">
+                  Confira os dados e tente novamente.
+                </div>
+              </div>
+            </div>
+          )}
 
-          <button className="botao-primario" type="submit" disabled={enviando}>
+          <div className="linha-total">
+            <span className="linha-total-rotulo">Total — {distancia}</span>
+            <span className="linha-total-valor display">
+              {formatarPreco(preco)}
+            </span>
+          </div>
+          <button className="botao-cta" type="submit" disabled={enviando}>
             {enviando
               ? "Redirecionando para o pagamento..."
-              : `Inscrever-se — ${formatarPreco(
-                  distancia === "8km" ? preco8km : preco18km,
-                )}`}
+              : `Inscrever-se — ${formatarPreco(preco)}`}
           </button>
+          <div className="nota-rodape">Pagamento via Pix ou cartão.</div>
         </form>
       </div>
     </main>
