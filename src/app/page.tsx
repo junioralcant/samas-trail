@@ -148,6 +148,78 @@ export default function InscricaoPage() {
 
       <div className="divisor-rasgado" />
 
+      <section className="secao-kit">
+        <div className="kit-cabecalho">
+          <div className="kit-cabecalho-texto">
+            <div className="kit-titulo-linha">
+              <div className="kit-barra" />
+              <h2 className="titulo-secao display">Kit do atleta</h2>
+            </div>
+            <div className="kit-subtitulo">Incluso na sua inscrição</div>
+          </div>
+          <svg
+            className="kit-trilha"
+            width="360"
+            height="26"
+            viewBox="0 0 360 26"
+            fill="none"
+          >
+            <path
+              d="M3 20C60 4 110 24 168 12s112-12 189 4"
+              stroke="#FFFFFF"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray="0.1 12"
+            />
+          </svg>
+        </div>
+        <div className="kit-cards">
+          <div className="kit-card">
+            <img
+              className="kit-foto-camiseta"
+              src="/kit/camiseta.jpeg"
+              alt="Camiseta oficial SAMAS TRAIL"
+            />
+            <div className="kit-badge">Incluso</div>
+            <div className="kit-card-texto">
+              <div className="kit-card-nome">Camiseta oficial</div>
+              <div className="kit-card-descricao">
+                Camiseta oficial do evento, tecido esportivo com mangas
+                exclusivas.
+              </div>
+            </div>
+          </div>
+          <div className="kit-card">
+            <img
+              className="kit-foto-medalha"
+              src="/kit/medalha.jpeg"
+              alt="Medalha de finisher SAMAS TRAIL"
+            />
+            <div className="kit-card-texto">
+              <div className="kit-card-nome">Medalha de finisher</div>
+              <div className="kit-card-descricao">
+                Medalha exclusiva SAMAS TRAIL para quem cruza a linha de
+                chegada.
+              </div>
+            </div>
+          </div>
+          <div className="kit-card">
+            <img
+              className="kit-foto-pulseira"
+              src="/kit/pulseira.jpeg"
+              alt="Pulseira exclusiva SAMAS TRAIL 2026"
+            />
+            <div className="kit-badge kit-badge-contorno">Edição 2026</div>
+            <div className="kit-card-texto">
+              <div className="kit-card-nome">Pulseira exclusiva</div>
+              <div className="kit-card-descricao">
+                Pulseira colecionável da edição 2026.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <div className="conteudo">
         <section className="coluna">
           <h2 className="titulo-secao display">Escolha sua distância</h2>
