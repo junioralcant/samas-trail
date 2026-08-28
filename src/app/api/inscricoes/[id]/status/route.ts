@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { getPaymentClient } from "@/lib/mercadopago";
-import { registrarStatusPagamento } from "@/lib/pagamento";
+import {
+  buscarPagamentoAprovadoMp,
+  registrarStatusPagamento,
+} from "@/lib/pagamento";
 import type { Inscricao } from "@/lib/types";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -31,14 +33,7 @@ export async function GET(_request: Request, context: RouteContext) {
   // "pago" — uma tentativa rejeitada não cancela a inscrição, o usuário
   // ainda pode pagar de novo pelo checkout.
   try {
-    const busca = await getPaymentClient().search({
-      options: {
-        external_reference: id,
-        sort: "date_last_updated",
-        criteria: "desc",
-      },
-    });
-    const aprovado = busca.results?.find((p) => p.status === "approved");
+    const aprovado = await buscarPagamentoAprovadoMp(inscricao.id);
     if (aprovado) {
       await registrarStatusPagamento(
         inscricao.id,

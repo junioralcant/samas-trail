@@ -1,5 +1,6 @@
 import { getDb } from "./db";
 import { enviarEmailInscricaoConfirmada } from "./emailInscricaoConfirmada";
+import { getPaymentClient } from "./mercadopago";
 import type { Inscricao, StatusPagamento } from "./types";
 
 export const MP_STATUS_PARA_LOCAL: Record<string, StatusPagamento> = {
@@ -11,6 +12,17 @@ export const MP_STATUS_PARA_LOCAL: Record<string, StatusPagamento> = {
   cancelled: "cancelado",
   refunded: "cancelado",
   charged_back: "cancelado",
+};
+
+export const buscarPagamentoAprovadoMp = async (inscricaoId: number) => {
+  const busca = await getPaymentClient().search({
+    options: {
+      external_reference: String(inscricaoId),
+      sort: "date_last_updated",
+      criteria: "desc",
+    },
+  });
+  return busca.results?.find((p) => p.status === "approved") ?? null;
 };
 
 export const registrarStatusPagamento = async (

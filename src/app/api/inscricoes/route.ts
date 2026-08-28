@@ -3,7 +3,11 @@ import { DISTANCIAS, getAppUrl, getEventName, getPreco } from "@/lib/config";
 import { limparCpf, validarCpf } from "@/lib/cpf";
 import { getDb } from "@/lib/db";
 import { getPreferenceClient } from "@/lib/mercadopago";
-import type { NovaInscricaoPayload } from "@/lib/types";
+import {
+  buscarPagamentoAprovadoMp,
+  registrarStatusPagamento,
+} from "@/lib/pagamento";
+import type { Inscricao, NovaInscricaoPayload } from "@/lib/types";
 
 const CAMPOS_OBRIGATORIOS: (keyof NovaInscricaoPayload)[] = [
   "nome",
@@ -50,27 +54,52 @@ export async function POST(request: Request) {
 
   const existente = db
     .prepare(
-      `SELECT id FROM inscricoes WHERE cpf = ? AND status_pagamento != 'cancelado'`,
+      `SELECT * FROM inscricoes WHERE cpf = ? AND status_pagamento != 'cancelado'`,
     )
-    .get(cpf);
-  if (existente) {
+    .get(cpf) as unknown as Inscricao | undefined;
+
+  if (existente && existente.status_pagamento === "pago") {
     return NextResponse.json(
-      { erro: "Já existe uma inscrição ativa para este CPF" },
+      { erro: "Já existe uma inscrição paga para este CPF" },
       { status: 409 },
     );
   }
 
+  if (existente) {
+    // Pendente: pode ser um pagamento aprovado que o webhook ainda não
+    // registrou — confere no Mercado Pago antes de deixar pagar de novo.
+    try {
+      const aprovado = await buscarPagamentoAprovadoMp(existente.id);
+      if (aprovado) {
+        await registrarStatusPagamento(
+          existente.id,
+          "pago",
+          aprovado.id ? String(aprovado.id) : null,
+        );
+        return NextResponse.json(
+          { erro: "Já existe uma inscrição paga para este CPF" },
+          { status: 409 },
+        );
+      }
+    } catch (error) {
+      console.error("Erro ao consultar pagamento no Mercado Pago", error);
+    }
+  }
+
   const valor = getPreco(payload.distancia);
 
-  const resultado = db
-    .prepare(
-      `INSERT INTO inscricoes
-        (nome, cpf, email, telefone, data_nascimento, sexo, tamanho_camiseta, equipe, distancia, valor)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
+  let inscricaoId: number;
+
+  if (existente) {
+    // Reaproveita a inscrição pendente abandonada: atualiza os dados e
+    // gera um novo checkout, mantendo o mesmo id (external_reference).
+    db.prepare(
+      `UPDATE inscricoes SET
+        nome = ?, email = ?, telefone = ?, data_nascimento = ?, sexo = ?,
+        tamanho_camiseta = ?, equipe = ?, distancia = ?, valor = ?
+       WHERE id = ?`,
+    ).run(
       payload.nome.trim(),
-      cpf,
       payload.email.trim().toLowerCase(),
       payload.telefone.trim(),
       payload.dataNascimento,
@@ -79,9 +108,30 @@ export async function POST(request: Request) {
       payload.equipe?.trim() || null,
       payload.distancia,
       valor,
+      existente.id,
     );
-
-  const inscricaoId = Number(resultado.lastInsertRowid);
+    inscricaoId = existente.id;
+  } else {
+    const resultado = db
+      .prepare(
+        `INSERT INTO inscricoes
+          (nome, cpf, email, telefone, data_nascimento, sexo, tamanho_camiseta, equipe, distancia, valor)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        payload.nome.trim(),
+        cpf,
+        payload.email.trim().toLowerCase(),
+        payload.telefone.trim(),
+        payload.dataNascimento,
+        payload.sexo,
+        payload.tamanhoCamiseta,
+        payload.equipe?.trim() || null,
+        payload.distancia,
+        valor,
+      );
+    inscricaoId = Number(resultado.lastInsertRowid);
+  }
   const appUrl = getAppUrl();
   const isHttps = appUrl.startsWith("https://");
 
@@ -126,7 +176,9 @@ export async function POST(request: Request) {
       initPoint: preference.init_point,
     });
   } catch (error) {
-    db.prepare("DELETE FROM inscricoes WHERE id = ?").run(inscricaoId);
+    if (!existente) {
+      db.prepare("DELETE FROM inscricoes WHERE id = ?").run(inscricaoId);
+    }
     console.error("Erro ao criar preferência Mercado Pago", error);
     return NextResponse.json(
       { erro: "Não foi possível iniciar o pagamento. Tente novamente." },
