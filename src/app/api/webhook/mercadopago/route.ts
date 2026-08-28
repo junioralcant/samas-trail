@@ -1,19 +1,6 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
-import { enviarEmailInscricaoConfirmada } from "@/lib/emailInscricaoConfirmada";
 import { getPaymentClient } from "@/lib/mercadopago";
-import type { Inscricao, StatusPagamento } from "@/lib/types";
-
-const MP_STATUS_PARA_LOCAL: Record<string, StatusPagamento> = {
-  approved: "pago",
-  pending: "pendente",
-  in_process: "pendente",
-  authorized: "pendente",
-  rejected: "cancelado",
-  cancelled: "cancelado",
-  refunded: "cancelado",
-  charged_back: "cancelado",
-};
+import { MP_STATUS_PARA_LOCAL, registrarStatusPagamento } from "@/lib/pagamento";
 
 const extrairPaymentId = async (request: Request): Promise<string | null> => {
   const url = new URL(request.url);
@@ -50,26 +37,8 @@ export async function POST(request: Request) {
       ? MP_STATUS_PARA_LOCAL[payment.status]
       : undefined;
 
-    if (inscricaoId && status) {
-      const db = getDb();
-      const anterior = db
-        .prepare("SELECT * FROM inscricoes WHERE id = ?")
-        .get(Number(inscricaoId)) as unknown as Inscricao | undefined;
-
-      db.prepare(
-        "UPDATE inscricoes SET status_pagamento = ?, mp_payment_id = ? WHERE id = ?",
-      ).run(status, paymentId, Number(inscricaoId));
-
-      if (
-        anterior &&
-        anterior.status_pagamento !== "pago" &&
-        status === "pago"
-      ) {
-        await enviarEmailInscricaoConfirmada({
-          ...anterior,
-          status_pagamento: "pago",
-        });
-      }
+    if (inscricaoId && /^\d+$/.test(inscricaoId) && status) {
+      await registrarStatusPagamento(Number(inscricaoId), status, paymentId);
     }
   } catch (error) {
     console.error("Erro ao processar webhook Mercado Pago", error);

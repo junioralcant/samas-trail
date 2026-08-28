@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import type { Inscricao } from "@/lib/types";
+import VerificadorPagamento from "./VerificadorPagamento";
 
 type RetornoPageProps = {
   searchParams: Promise<{ resultado?: string; external_reference?: string }>;
@@ -36,7 +37,9 @@ export default async function RetornoPage({ searchParams }: RetornoPageProps) {
   const { resultado, external_reference } = await searchParams;
   const inscricao = buscarInscricao(external_reference);
 
-  if (resultado === "sucesso") {
+  // O banco é a fonte da verdade: se o webhook já confirmou o pagamento,
+  // mostra a confirmação mesmo que o Mercado Pago redirecione como pendente.
+  if (resultado === "sucesso" || inscricao?.status_pagamento === "pago") {
     return (
       <main className="pagina-retorno textura">
         <div className="retorno-splatter" />
@@ -103,9 +106,10 @@ export default async function RetornoPage({ searchParams }: RetornoPageProps) {
           </div>
           <h1 className="retorno-titulo display">Pagamento em processamento</h1>
           <p className="retorno-texto">
-            Seu pagamento está sendo analisado pelo banco. Assim que for
+            Estamos aguardando a confirmação do pagamento. Assim que for
             aprovado, sua inscrição é confirmada automaticamente.
           </p>
+          {inscricao && <VerificadorPagamento inscricaoId={inscricao.id} />}
           <div className="retorno-aviso">Não é necessário pagar novamente.</div>
           <Link className="retorno-link" href="/">
             Voltar para a página de inscrição
