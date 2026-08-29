@@ -401,6 +401,7 @@ a:hover {
 
 .card-distancia {
   position: relative;
+  container-type: inline-size;
   cursor: pointer;
   border: none;
   border-radius: 14px;
@@ -425,7 +426,9 @@ a:hover {
 }
 
 .card-km {
-  font-size: 46px;
+  /* Em Anton, "18KM" mede ~2.3x o tamanho da fonte: amarrar a fonte a
+     largura do card evita que o titulo seja cortado. */
+  font-size: min(46px, calc((100cqi - 12px) / 2.3));
   line-height: 0.85;
   color: var(--branco);
   transform: skewX(-8deg);
@@ -593,6 +596,8 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 14px;
   padding: 14px 16px;
   border: 1px dashed rgba(255, 255, 255, 0.16);
   border-radius: 12px;
@@ -1748,7 +1753,7 @@ a:hover {
   }
 
   .card-km {
-    font-size: 88px;
+    font-size: min(88px, calc((100cqi - 12px) / 2.3));
     line-height: 0.82;
   }
 
@@ -1759,12 +1764,11 @@ a:hover {
   }
 
   .card-preco-bloco {
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
+    align-items: flex-start;
     text-align: left;
     margin-top: auto;
     padding-top: 28px;
+    gap: 4px;
   }
 
   .card-rotulo-inscricao {
@@ -1772,7 +1776,8 @@ a:hover {
   }
 
   .card-preco {
-    font-size: 34px;
+    /* mesma logica do titulo: "R$ 150,00" mede ~3.7x o tamanho da fonte */
+    font-size: min(34px, calc((100cqi - 10px) / 3.7));
   }
 
   .grid-form {
