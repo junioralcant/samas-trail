@@ -133,20 +133,6 @@ export default function AdminPage() {
     await carregarInscricoes();
   };
 
-  const alternarKit = async (inscricao: Inscricao) => {
-    const confirmado = window.confirm(
-      inscricao.kit_retirado_em
-        ? `Desfazer a retirada do kit de ${inscricao.nome}?`
-        : `Confirmar a retirada do kit de ${inscricao.nome} (${inscricao.distancia}, camiseta ${inscricao.tamanho_camiseta})?`,
-    );
-    if (!confirmado) {
-      return;
-    }
-    await atualizarInscricao(inscricao.id, {
-      kitRetirado: !inscricao.kit_retirado_em,
-    });
-  };
-
   const excluirInscricao = async (inscricao: Inscricao) => {
     const confirmado = window.confirm(
       `Excluir a inscrição de ${inscricao.nome}? Esta ação não pode ser desfeita.`,
@@ -414,7 +400,11 @@ export default function AdminPage() {
                             ? `Retirado em ${inscricao.kit_retirado_em} — clique para desfazer`
                             : "Confirmar retirada do kit"
                         }
-                        onClick={() => alternarKit(inscricao)}
+                        onClick={() =>
+                          atualizarInscricao(inscricao.id, {
+                            kitRetirado: !inscricao.kit_retirado_em,
+                          })
+                        }
                       >
                         {inscricao.kit_retirado_em ? "✔ Retirado" : "Pendente"}
                       </button>
