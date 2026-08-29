@@ -29,7 +29,7 @@ const FORM_INICIAL: FormState = {
 const eventDate = process.env.NEXT_PUBLIC_EVENT_DATE ?? "Data a definir";
 const eventLocation =
   process.env.NEXT_PUBLIC_EVENT_LOCATION ?? "Local a definir";
-const preco8km = Number(process.env.NEXT_PUBLIC_PRECO_8KM ?? "130.00");
+const preco8km = Number(process.env.NEXT_PUBLIC_PRECO_8KM ?? "120.00");
 const preco18km = Number(process.env.NEXT_PUBLIC_PRECO_18KM ?? "150.00");
 
 const formatarPreco = (valor: number) =>
