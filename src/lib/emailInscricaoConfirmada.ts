@@ -37,6 +37,17 @@ export const enviarEmailInscricaoConfirmada = async (
     style: "currency",
     currency: "BRL",
   });
+  const linhaCupom = inscricao.cupom_codigo
+    ? linhaDetalhe(
+        "Cupom",
+        valorComum(
+          `${inscricao.cupom_codigo} (−${inscricao.desconto.toLocaleString(
+            "pt-BR",
+            { style: "currency", currency: "BRL" },
+          )})`,
+        ),
+      )
+    : "";
   const linkInscricao = inscricao.kit_token
     ? `${getAppUrl()}/inscricao/${inscricao.kit_token}`
     : `${getAppUrl()}/inscricao/retorno?resultado=sucesso&external_reference=${
@@ -138,6 +149,7 @@ export const enviarEmailInscricaoConfirmada = async (
             "Distância",
             valorDestaque(inscricao.distancia.toUpperCase(), "#FFFFFF"),
           )}
+          ${linhaCupom}
           ${linhaDetalhe(
             "Valor pago",
             valorDestaque(valorFormatado, "#E10600"),

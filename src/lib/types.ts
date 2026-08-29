@@ -17,6 +17,8 @@ export type Inscricao = {
   status_pagamento: StatusPagamento;
   mp_preference_id: string | null;
   mp_payment_id: string | null;
+  cupom_codigo: string | null;
+  desconto: number;
   kit_token: string | null;
   kit_retirado_em: string | null;
   criado_em: string;
@@ -38,4 +40,14 @@ export type NovaInscricaoPayload = {
   tamanhoCamiseta: string;
   equipe?: string;
   distancia: Distancia;
+  cupom?: string;
+};
+
+export type Cupom = {
+  id: number;
+  codigo: string;
+  desconto: number;
+  validade: string | null;
+  ativo: number;
+  criado_em: string;
 };

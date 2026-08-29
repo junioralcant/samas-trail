@@ -29,8 +29,8 @@ const FORM_INICIAL: FormState = {
 const eventDate = process.env.NEXT_PUBLIC_EVENT_DATE ?? "Data a definir";
 const eventLocation =
   process.env.NEXT_PUBLIC_EVENT_LOCATION ?? "Local a definir";
-const preco8km = Number(process.env.NEXT_PUBLIC_PRECO_8KM ?? "89.90");
-const preco18km = Number(process.env.NEXT_PUBLIC_PRECO_18KM ?? "129.90");
+const preco8km = Number(process.env.NEXT_PUBLIC_PRECO_8KM ?? "110.00");
+const preco18km = Number(process.env.NEXT_PUBLIC_PRECO_18KM ?? "140.00");
 
 const formatarPreco = (valor: number) =>
   valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -50,13 +50,71 @@ const aplicarMascaraTelefone = (valor: string) =>
     .replace(/(\d{2})(\d)/, "($1) $2")
     .replace(/(\d{5})(\d)/, "$1-$2");
 
+type CupomAplicado = {
+  codigo: string;
+  desconto: number;
+  valorFinal: number;
+};
+
 export default function InscricaoPage() {
   const [distancia, setDistancia] = useState<Distancia>("8km");
   const [form, setForm] = useState<FormState>(FORM_INICIAL);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [cupom, setCupom] = useState("");
+  const [cupomAplicado, setCupomAplicado] = useState<CupomAplicado | null>(
+    null,
+  );
+  const [validandoCupom, setValidandoCupom] = useState(false);
+  const [erroCupom, setErroCupom] = useState<string | null>(null);
 
   const preco = distancia === "8km" ? preco8km : preco18km;
+  const desconto = cupomAplicado?.desconto ?? 0;
+  const total = preco - desconto;
+
+  const validarCupom = async (codigo: string, distanciaAlvo: Distancia) => {
+    setErroCupom(null);
+    setValidandoCupom(true);
+    try {
+      const response = await fetch("/api/cupons/validar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo, distancia: distanciaAlvo }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setCupomAplicado(null);
+        setErroCupom(data.erro ?? "Não foi possível validar o cupom.");
+        return;
+      }
+      setCupomAplicado({
+        codigo: data.codigo,
+        desconto: data.desconto,
+        valorFinal: data.valorFinal,
+      });
+      setCupom(data.codigo);
+    } catch {
+      setCupomAplicado(null);
+      setErroCupom("Erro de conexão. Tente novamente.");
+    } finally {
+      setValidandoCupom(false);
+    }
+  };
+
+  // O desconto é limitado pelo valor da inscrição, então trocar de
+  // distância exige revalidar o cupom já aplicado.
+  const trocarDistancia = (nova: Distancia) => {
+    setDistancia(nova);
+    if (cupomAplicado) {
+      void validarCupom(cupomAplicado.codigo, nova);
+    }
+  };
+
+  const removerCupom = () => {
+    setCupom("");
+    setCupomAplicado(null);
+    setErroCupom(null);
+  };
 
   const atualizarCampo =
     (campo: keyof FormState) =>
@@ -79,7 +137,11 @@ export default function InscricaoPage() {
       const response = await fetch("/api/inscricoes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, distancia }),
+        body: JSON.stringify({
+          ...form,
+          distancia,
+          cupom: cupomAplicado?.codigo,
+        }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -229,7 +291,7 @@ export default function InscricaoPage() {
               className={`card-distancia textura ${
                 distancia === "8km" ? "selecionada" : ""
               }`}
-              onClick={() => setDistancia("8km")}
+              onClick={() => trocarDistancia("8km")}
             >
               <div className="card-conteudo">
                 <div>
@@ -253,7 +315,7 @@ export default function InscricaoPage() {
               className={`card-distancia textura ${
                 distancia === "18km" ? "selecionada" : ""
               }`}
-              onClick={() => setDistancia("18km")}
+              onClick={() => trocarDistancia("18km")}
             >
               <div className="card-conteudo">
                 <div>
@@ -382,6 +444,49 @@ export default function InscricaoPage() {
             </label>
           </div>
 
+          <div className="campo campo-cupom">
+            <span className="campo-rotulo">Cupom de desconto (opcional)</span>
+            <div className="cupom-linha">
+              <input
+                value={cupom}
+                onChange={(event) => {
+                  setCupom(event.target.value.toUpperCase());
+                  setErroCupom(null);
+                }}
+                placeholder="Digite o código"
+                disabled={cupomAplicado !== null}
+                autoComplete="off"
+              />
+              {cupomAplicado ? (
+                <button
+                  className="botao-cupom botao-cupom-remover"
+                  type="button"
+                  onClick={removerCupom}
+                >
+                  Remover
+                </button>
+              ) : (
+                <button
+                  className="botao-cupom"
+                  type="button"
+                  disabled={validandoCupom || cupom.trim() === ""}
+                  onClick={() => validarCupom(cupom, distancia)}
+                >
+                  {validandoCupom ? "Validando..." : "Aplicar"}
+                </button>
+              )}
+            </div>
+            {cupomAplicado && (
+              <div className="cupom-aviso cupom-aviso-ok">
+                Cupom {cupomAplicado.codigo} aplicado —{" "}
+                {formatarPreco(cupomAplicado.desconto)} de desconto.
+              </div>
+            )}
+            {erroCupom && (
+              <div className="cupom-aviso cupom-aviso-erro">{erroCupom}</div>
+            )}
+          </div>
+
           {erro && (
             <div className="banner-erro">
               <div className="banner-erro-icone">!</div>
@@ -395,15 +500,27 @@ export default function InscricaoPage() {
           )}
 
           <div className="linha-total">
-            <span className="linha-total-rotulo">Total — {distancia}</span>
+            <span className="linha-total-rotulo">
+              Total — {distancia}
+              {cupomAplicado && (
+                <span className="linha-total-desconto">
+                  cupom {cupomAplicado.codigo}: −{formatarPreco(desconto)}
+                </span>
+              )}
+            </span>
             <span className="linha-total-valor display">
-              {formatarPreco(preco)}
+              {cupomAplicado && (
+                <span className="linha-total-antigo">
+                  {formatarPreco(preco)}
+                </span>
+              )}
+              {formatarPreco(total)}
             </span>
           </div>
           <button className="botao-cta" type="submit" disabled={enviando}>
             {enviando
               ? "Redirecionando para o pagamento..."
-              : `Inscrever-se — ${formatarPreco(preco)}`}
+              : `Inscrever-se — ${formatarPreco(total)}`}
           </button>
           <div className="nota-rodape">Pagamento via Pix ou cartão.</div>
         </form>

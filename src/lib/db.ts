@@ -27,6 +27,15 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_inscricoes_cpf ON inscricoes (cpf);
   CREATE INDEX IF NOT EXISTS idx_inscricoes_distancia ON inscricoes (distancia);
   CREATE INDEX IF NOT EXISTS idx_inscricoes_status ON inscricoes (status_pagamento);
+
+  CREATE TABLE IF NOT EXISTS cupons (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    codigo TEXT NOT NULL UNIQUE,
+    desconto REAL NOT NULL CHECK (desconto > 0),
+    validade TEXT,
+    ativo INTEGER NOT NULL DEFAULT 1,
+    criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+  );
 `;
 
 export const gerarKitToken = () => randomBytes(16).toString("hex");
@@ -42,6 +51,14 @@ const migrar = (database: DatabaseSync) => {
   }
   if (!nomes.has("kit_retirado_em")) {
     database.exec("ALTER TABLE inscricoes ADD COLUMN kit_retirado_em TEXT");
+  }
+  if (!nomes.has("cupom_codigo")) {
+    database.exec("ALTER TABLE inscricoes ADD COLUMN cupom_codigo TEXT");
+  }
+  if (!nomes.has("desconto")) {
+    database.exec(
+      "ALTER TABLE inscricoes ADD COLUMN desconto REAL NOT NULL DEFAULT 0",
+    );
   }
   database.exec(
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_inscricoes_kit_token ON inscricoes (kit_token)",

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { DISTANCIAS, getAppUrl, getEventName, getPreco } from "@/lib/config";
 import { limparCpf, validarCpf } from "@/lib/cpf";
+import { aplicarCupom } from "@/lib/cupom";
 import { gerarKitToken, getDb } from "@/lib/db";
 import { getPreferenceClient } from "@/lib/mercadopago";
 import {
@@ -86,7 +87,20 @@ export async function POST(request: Request) {
     }
   }
 
-  const valor = getPreco(payload.distancia);
+  const valorBase = getPreco(payload.distancia);
+
+  // Revalida o cupom no servidor: o que veio do formulário é só uma sugestão.
+  let cupomCodigo: string | null = null;
+  let desconto = 0;
+  if (payload.cupom && payload.cupom.trim() !== "") {
+    const cupom = aplicarCupom(payload.cupom, valorBase);
+    if ("erro" in cupom) {
+      return NextResponse.json({ erro: cupom.erro }, { status: 400 });
+    }
+    cupomCodigo = cupom.codigo;
+    desconto = cupom.desconto;
+  }
+  const valor = valorBase - desconto;
 
   let inscricaoId: number;
 
@@ -96,7 +110,8 @@ export async function POST(request: Request) {
     db.prepare(
       `UPDATE inscricoes SET
         nome = ?, email = ?, telefone = ?, data_nascimento = ?, sexo = ?,
-        tamanho_camiseta = ?, equipe = ?, distancia = ?, valor = ?
+        tamanho_camiseta = ?, equipe = ?, distancia = ?, valor = ?,
+        cupom_codigo = ?, desconto = ?
        WHERE id = ?`,
     ).run(
       payload.nome.trim(),
@@ -108,6 +123,8 @@ export async function POST(request: Request) {
       payload.equipe?.trim() || null,
       payload.distancia,
       valor,
+      cupomCodigo,
+      desconto,
       existente.id,
     );
     inscricaoId = existente.id;
@@ -115,8 +132,8 @@ export async function POST(request: Request) {
     const resultado = db
       .prepare(
         `INSERT INTO inscricoes
-          (nome, cpf, email, telefone, data_nascimento, sexo, tamanho_camiseta, equipe, distancia, valor, kit_token)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (nome, cpf, email, telefone, data_nascimento, sexo, tamanho_camiseta, equipe, distancia, valor, cupom_codigo, desconto, kit_token)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         payload.nome.trim(),
@@ -129,6 +146,8 @@ export async function POST(request: Request) {
         payload.equipe?.trim() || null,
         payload.distancia,
         valor,
+        cupomCodigo,
+        desconto,
         gerarKitToken(),
       );
     inscricaoId = Number(resultado.lastInsertRowid);
@@ -142,7 +161,9 @@ export async function POST(request: Request) {
         items: [
           {
             id: `inscricao-${payload.distancia}`,
-            title: `Inscrição ${payload.distancia} — ${getEventName()}`,
+            title: cupomCodigo
+              ? `Inscrição ${payload.distancia} — ${getEventName()} (cupom ${cupomCodigo})`
+              : `Inscrição ${payload.distancia} — ${getEventName()}`,
             quantity: 1,
             unit_price: valor,
             currency_id: "BRL",

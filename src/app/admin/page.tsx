@@ -18,9 +18,20 @@ type Inscricao = {
   equipe: string | null;
   distancia: Distancia;
   valor: number;
+  cupom_codigo: string | null;
+  desconto: number;
   status_pagamento: StatusPagamento;
   kit_retirado_em: string | null;
   criado_em: string;
+};
+
+type Cupom = {
+  id: number;
+  codigo: string;
+  desconto: number;
+  validade: string | null;
+  ativo: number;
+  usos: number;
 };
 
 type Stats = {
@@ -37,6 +48,8 @@ const eventDate = process.env.NEXT_PUBLIC_EVENT_DATE ?? "";
 
 const formatarPreco = (valor: number) =>
   valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const formatarData = (data: string) => data.split("-").reverse().join("/");
 
 const formatarCpf = (cpf: string) =>
   cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
@@ -61,6 +74,14 @@ export default function AdminPage() {
   const [filtroStatus, setFiltroStatus] = useState("");
   const [busca, setBusca] = useState("");
   const [atualizadoAs, setAtualizadoAs] = useState("");
+  const [cupons, setCupons] = useState<Cupom[]>([]);
+  const [novoCupom, setNovoCupom] = useState({
+    codigo: "",
+    desconto: "",
+    validade: "",
+  });
+  const [erroCupom, setErroCupom] = useState<string | null>(null);
+  const [salvandoCupom, setSalvandoCupom] = useState(false);
 
   const carregarInscricoes = useCallback(async () => {
     const params = new URLSearchParams();
@@ -90,9 +111,24 @@ export default function AdminPage() {
     setAutenticado(true);
   }, [filtroDistancia, filtroStatus, busca]);
 
+  const carregarCupons = useCallback(async () => {
+    const response = await fetch("/api/admin/cupons");
+    if (!response.ok) {
+      return;
+    }
+    const data = await response.json();
+    setCupons(data.cupons);
+  }, []);
+
   useEffect(() => {
     carregarInscricoes();
   }, [carregarInscricoes]);
+
+  useEffect(() => {
+    if (autenticado) {
+      carregarCupons();
+    }
+  }, [autenticado, carregarCupons]);
 
   const fazerLogin = async (event: FormEvent) => {
     event.preventDefault();
@@ -142,6 +178,52 @@ export default function AdminPage() {
     }
     await fetch(`/api/admin/inscricoes/${inscricao.id}`, { method: "DELETE" });
     await carregarInscricoes();
+  };
+
+  const criarCupom = async (event: FormEvent) => {
+    event.preventDefault();
+    setErroCupom(null);
+    setSalvandoCupom(true);
+    try {
+      const response = await fetch("/api/admin/cupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          codigo: novoCupom.codigo,
+          desconto: Number(novoCupom.desconto.replace(",", ".")),
+          validade: novoCupom.validade,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setErroCupom(data.erro ?? "Não foi possível criar o cupom.");
+        return;
+      }
+      setCupons(data.cupons);
+      setNovoCupom({ codigo: "", desconto: "", validade: "" });
+    } finally {
+      setSalvandoCupom(false);
+    }
+  };
+
+  const alternarCupom = async (cupom: Cupom) => {
+    await fetch(`/api/admin/cupons/${cupom.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ativo: !cupom.ativo }),
+    });
+    await carregarCupons();
+  };
+
+  const excluirCupom = async (cupom: Cupom) => {
+    const confirmado = window.confirm(
+      `Excluir o cupom ${cupom.codigo}? Inscrições já feitas com ele não são afetadas.`,
+    );
+    if (!confirmado) {
+      return;
+    }
+    await fetch(`/api/admin/cupons/${cupom.id}`, { method: "DELETE" });
+    await carregarCupons();
   };
 
   const limparFiltros = () => {
@@ -264,8 +346,10 @@ export default function AdminPage() {
               <div className="stat-rotulo">Kits retirados</div>
               <div className="stat-valor display">{stats.kitsRetirados}</div>
               <div className="stat-nota">
-                {percentual(stats.kitsRetirados, stats.pagos)
-                  .replace("do total", "dos pagos")}
+                {percentual(stats.kitsRetirados, stats.pagos).replace(
+                  "do total",
+                  "dos pagos",
+                )}
               </div>
             </div>
           </div>
@@ -383,6 +467,12 @@ export default function AdminPage() {
                     </div>
                     <div className="celula-valor">
                       {formatarPreco(inscricao.valor)}
+                      {inscricao.cupom_codigo && (
+                        <span className="celula-cupom">
+                          {inscricao.cupom_codigo} −
+                          {formatarPreco(inscricao.desconto)}
+                        </span>
+                      )}
                     </div>
                     <div>
                       <span className={`badge ${inscricao.status_pagamento}`}>
@@ -448,6 +538,119 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
+
+        <section className="cupons-card">
+          <div className="cupons-cabecalho">
+            <div>
+              <div className="cupons-titulo display">Cupons de desconto</div>
+              <div className="cupons-subtitulo">
+                Desconto em reais sobre o valor da inscrição. Sem validade, o
+                cupom vale enquanto estiver ativo.
+              </div>
+            </div>
+          </div>
+
+          <form className="cupom-form" onSubmit={criarCupom}>
+            <label className="campo">
+              <span className="campo-rotulo">Código</span>
+              <input
+                required
+                value={novoCupom.codigo}
+                onChange={(event) =>
+                  setNovoCupom((previo) => ({
+                    ...previo,
+                    codigo: event.target.value.toUpperCase(),
+                  }))
+                }
+                placeholder="AMIGO20"
+              />
+            </label>
+            <label className="campo">
+              <span className="campo-rotulo">Desconto (R$)</span>
+              <input
+                required
+                inputMode="decimal"
+                value={novoCupom.desconto}
+                onChange={(event) =>
+                  setNovoCupom((previo) => ({
+                    ...previo,
+                    desconto: event.target.value,
+                  }))
+                }
+                placeholder="20"
+              />
+            </label>
+            <label className="campo">
+              <span className="campo-rotulo">Validade (opcional)</span>
+              <input
+                type="date"
+                value={novoCupom.validade}
+                onChange={(event) =>
+                  setNovoCupom((previo) => ({
+                    ...previo,
+                    validade: event.target.value,
+                  }))
+                }
+              />
+            </label>
+            <button
+              className="botao-vermelho"
+              type="submit"
+              disabled={salvandoCupom}
+            >
+              {salvandoCupom ? "Criando..." : "Criar cupom"}
+            </button>
+          </form>
+
+          {erroCupom && (
+            <div className="banner-erro">
+              <div className="banner-erro-icone">!</div>
+              <div className="banner-erro-titulo">{erroCupom}</div>
+            </div>
+          )}
+
+          {cupons.length === 0 ? (
+            <div className="cupons-vazio">Nenhum cupom cadastrado ainda.</div>
+          ) : (
+            <div className="cupons-lista">
+              {cupons.map((cupom) => (
+                <div
+                  className={`cupom-linha-admin ${cupom.ativo ? "" : "inativo"}`}
+                  key={cupom.id}
+                >
+                  <div className="cupom-codigo display">{cupom.codigo}</div>
+                  <div className="cupom-desconto">
+                    −{formatarPreco(cupom.desconto)}
+                  </div>
+                  <div className="cupom-info">
+                    {cupom.validade
+                      ? `até ${formatarData(cupom.validade)}`
+                      : "sem validade"}
+                  </div>
+                  <div className="cupom-info">
+                    {cupom.usos} {cupom.usos === 1 ? "uso" : "usos"}
+                  </div>
+                  <div className="cupom-acoes">
+                    <button
+                      className="botao-contorno"
+                      type="button"
+                      onClick={() => alternarCupom(cupom)}
+                    >
+                      {cupom.ativo ? "Desativar" : "Ativar"}
+                    </button>
+                    <button
+                      className="botao-excluir"
+                      type="button"
+                      onClick={() => excluirCupom(cupom)}
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );

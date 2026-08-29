@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { DISTANCIAS, getPreco, type Distancia } from "@/lib/config";
+import { VALOR_MINIMO, arredondar } from "@/lib/cupom";
 import { getDb } from "@/lib/db";
 import type { Inscricao, StatusPagamento } from "@/lib/types";
 
@@ -43,9 +44,13 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (!DISTANCIAS.includes(payload.distancia)) {
       return NextResponse.json({ erro: "Distância inválida" }, { status: 400 });
     }
+    // Só recalcula enquanto está pendente; mantém o desconto do cupom usado.
     const novoValor =
       inscricao.status_pagamento === "pendente"
-        ? getPreco(payload.distancia)
+        ? Math.max(
+            arredondar(getPreco(payload.distancia) - inscricao.desconto),
+            VALOR_MINIMO,
+          )
         : inscricao.valor;
     db.prepare(
       "UPDATE inscricoes SET distancia = ?, valor = ? WHERE id = ?",
