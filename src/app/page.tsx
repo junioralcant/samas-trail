@@ -412,9 +412,6 @@ export default function InscricaoPage() {
                 <option value="">Selecione</option>
                 <option value="masculino">Masculino</option>
                 <option value="feminino">Feminino</option>
-                <option value="prefiro-nao-informar">
-                  Prefiro não informar
-                </option>
               </select>
             </label>
             <label className="campo">
