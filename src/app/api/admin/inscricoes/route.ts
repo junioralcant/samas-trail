@@ -45,7 +45,8 @@ export async function GET(request: Request) {
          COALESCE(SUM(CASE WHEN distancia = '18km' THEN 1 ELSE 0 END), 0) AS total18km,
          COALESCE(SUM(CASE WHEN status_pagamento = 'pago' THEN 1 ELSE 0 END), 0) AS pagos,
          COALESCE(SUM(CASE WHEN status_pagamento = 'pendente' THEN 1 ELSE 0 END), 0) AS pendentes,
-         COALESCE(SUM(CASE WHEN status_pagamento = 'pago' THEN valor ELSE 0 END), 0) AS receita
+         COALESCE(SUM(CASE WHEN status_pagamento = 'pago' THEN valor ELSE 0 END), 0) AS receita,
+         COALESCE(SUM(CASE WHEN kit_retirado_em IS NOT NULL THEN 1 ELSE 0 END), 0) AS kitsRetirados
        FROM inscricoes`,
     )
     .get();

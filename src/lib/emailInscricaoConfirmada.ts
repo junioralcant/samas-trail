@@ -37,9 +37,43 @@ export const enviarEmailInscricaoConfirmada = async (
     style: "currency",
     currency: "BRL",
   });
-  const linkInscricao = `${getAppUrl()}/inscricao/retorno?resultado=sucesso&external_reference=${
-    inscricao.id
-  }`;
+  const linkInscricao = inscricao.kit_token
+    ? `${getAppUrl()}/inscricao/${inscricao.kit_token}`
+    : `${getAppUrl()}/inscricao/retorno?resultado=sucesso&external_reference=${
+        inscricao.id
+      }`;
+  const qrHtml = inscricao.kit_token
+    ? `
+    <tr>
+      <td align="center" style="padding:28px 28px 0 28px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%; background-color:#0F0F0F; border:1px solid #1F1F1F; border-radius:12px; border-collapse:separate;">
+          <tr>
+            <td align="center" style="padding:22px 22px 6px 22px;">
+              <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:16px; mso-line-height-rule:exactly; letter-spacing:1.5px; color:#E10600; text-transform:uppercase; font-weight:bold;">Retirada do kit</div>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:14px 22px 0 22px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background-color:#FFFFFF; border-radius:12px; padding:10px;">
+                    <img src="${getAppUrl()}/api/qr/${
+                      inscricao.kit_token
+                    }" width="180" height="180" alt="QR code da sua inscrição" style="display:block; width:180px; height:180px; border:0;">
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:16px 22px 22px 22px; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; mso-line-height-rule:exactly; color:#9CA3AF;">
+              Apresente este QR code à organização para retirar o seu kit de atleta. Ele também aparece em "Ver minha inscrição".
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>`
+    : "";
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -129,6 +163,8 @@ export const enviarEmailInscricaoConfirmada = async (
         </table>
       </td>
     </tr>
+
+${qrHtml}
 
     <tr>
       <td align="center" style="padding:28px 28px 4px 28px;">

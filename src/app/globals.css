@@ -807,6 +807,154 @@ a:hover {
   }
 }
 
+.qr-moldura {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 12px;
+  line-height: 0;
+}
+
+.kit-status {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.kit-status-retirado {
+  background: rgba(52, 211, 153, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  color: var(--verde-badge);
+}
+
+.botao-kit {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: var(--cinza);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.botao-kit.retirado {
+  background: rgba(52, 211, 153, 0.12);
+  border-color: rgba(52, 211, 153, 0.4);
+  color: var(--verde-badge);
+}
+
+.leitor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.leitor-card {
+  width: 100%;
+  max-width: 460px;
+  background: #131313;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.leitor-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.leitor-titulo {
+  font-size: 20px;
+  color: var(--branco);
+  text-transform: uppercase;
+}
+
+.leitor-instrucao {
+  font-size: 13px;
+  color: var(--cinza);
+  text-align: center;
+}
+
+.leitor-video-moldura {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.leitor-video-moldura[data-lendo="true"] {
+  border-color: rgba(225, 6, 0, 0.6);
+}
+
+.leitor-video-moldura video {
+  width: 100%;
+  max-height: 55vh;
+  display: block;
+  object-fit: cover;
+}
+
+.leitor-resultado {
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.leitor-resultado-titulo {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.leitor-sucesso {
+  background: rgba(52, 211, 153, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  color: var(--verde-badge);
+}
+
+.leitor-alerta {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  color: var(--ambar-badge);
+}
+
+.leitor-erro {
+  background: rgba(225, 6, 0, 0.1);
+  border: 1px solid rgba(225, 6, 0, 0.5);
+  color: #ff6b63;
+}
+
+.leitor-atleta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.leitor-atleta-nome {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--branco);
+}
+
+.leitor-atleta-info {
+  font-size: 13px;
+  color: var(--cinza);
+}
+
 .retorno-link {
   font-size: 12.5px;
   font-weight: 600;
@@ -1003,7 +1151,7 @@ a:hover {
 
 .tabela-colunas {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1.7fr 0.7fr 1fr 0.9fr 0.8fr 0.9fr 1fr 1.5fr;
+  grid-template-columns: 1.5fr 1fr 1.7fr 0.7fr 1fr 0.9fr 0.8fr 0.9fr 1fr 1fr 1.5fr;
   gap: 10px;
   padding: 14px 18px;
   align-items: center;

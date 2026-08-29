@@ -17,6 +17,8 @@ export type Inscricao = {
   status_pagamento: StatusPagamento;
   mp_preference_id: string | null;
   mp_payment_id: string | null;
+  kit_token: string | null;
+  kit_retirado_em: string | null;
   criado_em: string;
 };
 

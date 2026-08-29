@@ -9,6 +9,7 @@ const STATUS_VALIDOS: StatusPagamento[] = ["pendente", "pago", "cancelado"];
 type PatchPayload = {
   distancia?: Distancia;
   statusPagamento?: StatusPagamento;
+  kitRetirado?: boolean;
 };
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -59,6 +60,14 @@ export async function PATCH(request: Request, context: RouteContext) {
       payload.statusPagamento,
       inscricao.id,
     );
+  }
+
+  if (payload.kitRetirado !== undefined) {
+    db.prepare(
+      `UPDATE inscricoes SET kit_retirado_em =
+         CASE WHEN ? THEN datetime('now', 'localtime') ELSE NULL END
+       WHERE id = ?`,
+    ).run(payload.kitRetirado ? 1 : 0, inscricao.id);
   }
 
   const atualizada = db

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import LeitorKit from "./LeitorKit";
 
 type Distancia = "8km" | "18km";
 type StatusPagamento = "pendente" | "pago" | "cancelado";
@@ -18,6 +19,7 @@ type Inscricao = {
   distancia: Distancia;
   valor: number;
   status_pagamento: StatusPagamento;
+  kit_retirado_em: string | null;
   criado_em: string;
 };
 
@@ -28,6 +30,7 @@ type Stats = {
   pagos: number;
   pendentes: number;
   receita: number;
+  kitsRetirados: number;
 };
 
 const eventDate = process.env.NEXT_PUBLIC_EVENT_DATE ?? "";
@@ -116,7 +119,11 @@ export default function AdminPage() {
 
   const atualizarInscricao = async (
     id: number,
-    campos: { distancia?: Distancia; statusPagamento?: StatusPagamento },
+    campos: {
+      distancia?: Distancia;
+      statusPagamento?: StatusPagamento;
+      kitRetirado?: boolean;
+    },
   ) => {
     await fetch(`/api/admin/inscricoes/${id}`, {
       method: "PATCH",
@@ -192,6 +199,7 @@ export default function AdminPage() {
           <div className="admin-marca-titulo">Painel de inscrições</div>
         </div>
         <div className="admin-acoes">
+          <LeitorKit onConfirmado={carregarInscricoes} />
           <a href="/api/admin/export">
             <button className="botao-vermelho" type="button">
               Exportar CSV
@@ -252,6 +260,14 @@ export default function AdminPage() {
               </div>
               <div className="stat-nota">pagamentos aprovados</div>
             </div>
+            <div className="stat-card">
+              <div className="stat-rotulo">Kits retirados</div>
+              <div className="stat-valor display">{stats.kitsRetirados}</div>
+              <div className="stat-nota">
+                {percentual(stats.kitsRetirados, stats.pagos)
+                  .replace("do total", "dos pagos")}
+              </div>
+            </div>
           </div>
         )}
 
@@ -292,6 +308,7 @@ export default function AdminPage() {
                 <div>Distância</div>
                 <div>Valor</div>
                 <div>Status</div>
+                <div>Kit</div>
                 <div>Inscrito em</div>
                 <div>Ações</div>
               </div>
@@ -371,6 +388,26 @@ export default function AdminPage() {
                       <span className={`badge ${inscricao.status_pagamento}`}>
                         {inscricao.status_pagamento}
                       </span>
+                    </div>
+                    <div>
+                      <button
+                        className={`botao-kit ${
+                          inscricao.kit_retirado_em ? "retirado" : ""
+                        }`}
+                        type="button"
+                        title={
+                          inscricao.kit_retirado_em
+                            ? `Retirado em ${inscricao.kit_retirado_em} — clique para desfazer`
+                            : "Marcar kit como retirado"
+                        }
+                        onClick={() =>
+                          atualizarInscricao(inscricao.id, {
+                            kitRetirado: !inscricao.kit_retirado_em,
+                          })
+                        }
+                      >
+                        {inscricao.kit_retirado_em ? "✔ Retirado" : "Pendente"}
+                      </button>
                     </div>
                     <div className="celula-data">{inscricao.criado_em}</div>
                     <div className="celula-acoes">

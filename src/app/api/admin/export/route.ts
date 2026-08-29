@@ -16,6 +16,7 @@ const CSV_HEADER = [
   "Distância",
   "Valor",
   "Status",
+  "Kit retirado em",
   "Inscrito em",
 ];
 
@@ -47,6 +48,7 @@ export async function GET() {
       i.distancia,
       i.valor.toFixed(2).replace(".", ","),
       i.status_pagamento,
+      i.kit_retirado_em,
       i.criado_em,
     ]
       .map(escapeCsv)

@@ -1,4 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
+import { randomBytes } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
@@ -28,6 +29,35 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_inscricoes_status ON inscricoes (status_pagamento);
 `;
 
+export const gerarKitToken = () => randomBytes(16).toString("hex");
+
+const migrar = (database: DatabaseSync) => {
+  const colunas = database
+    .prepare("SELECT name FROM pragma_table_info('inscricoes')")
+    .all() as unknown as { name: string }[];
+  const nomes = new Set(colunas.map((c) => c.name));
+
+  if (!nomes.has("kit_token")) {
+    database.exec("ALTER TABLE inscricoes ADD COLUMN kit_token TEXT");
+  }
+  if (!nomes.has("kit_retirado_em")) {
+    database.exec("ALTER TABLE inscricoes ADD COLUMN kit_retirado_em TEXT");
+  }
+  database.exec(
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_inscricoes_kit_token ON inscricoes (kit_token)",
+  );
+
+  const semToken = database
+    .prepare("SELECT id FROM inscricoes WHERE kit_token IS NULL")
+    .all() as unknown as { id: number }[];
+  const atualizar = database.prepare(
+    "UPDATE inscricoes SET kit_token = ? WHERE id = ?",
+  );
+  for (const linha of semToken) {
+    atualizar.run(gerarKitToken(), linha.id);
+  }
+};
+
 export const getDb = (): DatabaseSync => {
   if (db) {
     return db;
@@ -39,5 +69,6 @@ export const getDb = (): DatabaseSync => {
   db = new DatabaseSync(path);
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec(SCHEMA);
+  migrar(db);
   return db;
 };

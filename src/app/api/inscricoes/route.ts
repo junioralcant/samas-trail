@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { DISTANCIAS, getAppUrl, getEventName, getPreco } from "@/lib/config";
 import { limparCpf, validarCpf } from "@/lib/cpf";
-import { getDb } from "@/lib/db";
+import { gerarKitToken, getDb } from "@/lib/db";
 import { getPreferenceClient } from "@/lib/mercadopago";
 import {
   buscarPagamentoAprovadoMp,
@@ -115,8 +115,8 @@ export async function POST(request: Request) {
     const resultado = db
       .prepare(
         `INSERT INTO inscricoes
-          (nome, cpf, email, telefone, data_nascimento, sexo, tamanho_camiseta, equipe, distancia, valor)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (nome, cpf, email, telefone, data_nascimento, sexo, tamanho_camiseta, equipe, distancia, valor, kit_token)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         payload.nome.trim(),
@@ -129,6 +129,7 @@ export async function POST(request: Request) {
         payload.equipe?.trim() || null,
         payload.distancia,
         valor,
+        gerarKitToken(),
       );
     inscricaoId = Number(resultado.lastInsertRowid);
   }
