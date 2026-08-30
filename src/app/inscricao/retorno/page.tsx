@@ -106,8 +106,9 @@ export default async function RetornoPage({ searchParams }: RetornoPageProps) {
           </div>
           <h1 className="retorno-titulo display">Pagamento em processamento</h1>
           <p className="retorno-texto">
-            Estamos aguardando a confirmação do pagamento. Assim que for
-            aprovado, sua inscrição é confirmada automaticamente.
+            Seu pagamento está sendo analisado pelo banco. Assim que for
+            aprovado, sua inscrição é confirmada automaticamente — você recebe
+            um e-mail de confirmação.
           </p>
           {inscricao && <VerificadorPagamento inscricaoId={inscricao.id} />}
           <div className="retorno-aviso">Não é necessário pagar novamente.</div>

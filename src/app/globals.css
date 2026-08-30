@@ -716,6 +716,261 @@ a:hover {
   line-height: 1.5;
 }
 
+.divisor-premiacao {
+  max-width: 1180px;
+  margin: 44px auto 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.secao-premiacao {
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 30px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.premiacao-splatter {
+  position: absolute;
+  top: -60px;
+  right: -80px;
+  width: 320px;
+  height: 150px;
+  background: var(--vermelho);
+  opacity: 0.09;
+  transform: rotate(10deg);
+  clip-path: polygon(
+    0% 40%,
+    16% 6%,
+    40% 48%,
+    62% 12%,
+    84% 54%,
+    100% 26%,
+    100% 74%,
+    70% 94%,
+    44% 64%,
+    16% 90%,
+    2% 68%
+  );
+  pointer-events: none;
+}
+
+.premiacao-cabecalho {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.premiacao-cabecalho-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.premiacao-titulo-linha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.premiacao-barra {
+  width: 22px;
+  height: 5px;
+  background: var(--vermelho);
+  flex-shrink: 0;
+}
+
+.premiacao-subtitulo {
+  font-size: 12.5px;
+  color: var(--cinza);
+}
+
+.premiacao-trilha {
+  display: none;
+}
+
+.premiacao-cards {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.premiacao-card {
+  background: var(--painel-claro);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.premiacao-card-topo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.premiacao-km {
+  font-size: 28px;
+  line-height: 0.9;
+  color: var(--branco);
+  transform: skewX(-8deg);
+}
+
+.premiacao-etiqueta {
+  background: var(--vermelho);
+  color: var(--branco);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 5px 11px;
+  border-radius: 999px;
+}
+
+.premiacao-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 14px;
+  border: 1px solid var(--vermelho);
+  background: rgba(225, 6, 0, 0.12);
+  border-radius: 12px;
+}
+
+.premiacao-aviso-icone {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--vermelho);
+  color: var(--branco);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.premiacao-aviso-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--texto);
+  line-height: 1.55;
+}
+
+.premiacao-aviso-texto strong {
+  color: var(--branco);
+  font-weight: 700;
+}
+
+.premiacao-aviso-titulo {
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: var(--branco);
+  line-height: 1.15;
+}
+
+.premiacao-listas {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.premiacao-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.premiacao-lista-rotulo {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cinza-escuro);
+}
+
+.premiacao-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.premiacao-colocacao {
+  font-size: 12.5px;
+  color: var(--texto);
+}
+
+.premiacao-valor {
+  font-size: 17px;
+  color: var(--vermelho);
+  white-space: nowrap;
+}
+
+.premiacao-faixas {
+  position: relative;
+  background: var(--painel-login);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.premiacao-faixas-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.premiacao-faixas-titulo {
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  color: var(--branco);
+  transform: skewX(-6deg);
+  transform-origin: left;
+}
+
+.premiacao-faixas-descricao {
+  font-size: 12px;
+  color: var(--cinza);
+  line-height: 1.5;
+}
+
+.premiacao-faixas-descricao strong {
+  color: #ff6b63;
+  font-weight: 700;
+}
+
+.premiacao-faixas-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-faixa {
+  border: 1px solid rgba(225, 6, 0, 0.55);
+  color: #ff6b63;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+}
+
 .pagina-retorno {
   position: relative;
   min-height: 100vh;
@@ -1817,6 +2072,152 @@ a:hover {
 
   .nota-rodape {
     font-size: 12.5px;
+  }
+
+  .divisor-premiacao {
+    margin-top: 0;
+    max-width: 1180px;
+  }
+
+  .secao-premiacao {
+    padding: 64px 80px 88px;
+    gap: 32px;
+  }
+
+  .premiacao-splatter {
+    width: 520px;
+    height: 200px;
+  }
+
+  .premiacao-cabecalho {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .premiacao-cabecalho-texto {
+    gap: 8px;
+  }
+
+  .premiacao-titulo-linha {
+    gap: 14px;
+  }
+
+  .premiacao-barra {
+    width: 38px;
+    height: 7px;
+  }
+
+  .premiacao-subtitulo {
+    font-size: 15px;
+  }
+
+  .premiacao-trilha {
+    display: block;
+    opacity: 0.35;
+    margin-bottom: 6px;
+  }
+
+  .premiacao-cards {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .premiacao-card {
+    border-radius: 18px;
+    padding: 32px 30px;
+    gap: 24px;
+  }
+
+  .premiacao-card-topo {
+    gap: 14px;
+  }
+
+  .premiacao-km {
+    font-size: 52px;
+  }
+
+  .premiacao-etiqueta {
+    font-size: 11px;
+    padding: 8px 16px;
+  }
+
+  .premiacao-aviso {
+    gap: 16px;
+    padding: 20px 22px;
+    border-radius: 14px;
+  }
+
+  .premiacao-aviso-icone {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+
+  .premiacao-aviso-texto {
+    gap: 5px;
+    font-size: 14.5px;
+  }
+
+  .premiacao-aviso-titulo {
+    font-size: 22px;
+    line-height: 1.1;
+  }
+
+  .premiacao-listas {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+
+  .premiacao-lista {
+    gap: 8px;
+  }
+
+  .premiacao-lista-rotulo {
+    font-size: 11px;
+  }
+
+  .premiacao-linha {
+    align-items: baseline;
+    gap: 12px;
+    padding: 12px 0;
+    border-top-color: var(--borda-suave);
+  }
+
+  .premiacao-colocacao {
+    font-size: 14px;
+  }
+
+  .premiacao-valor {
+    font-size: 24px;
+  }
+
+  .premiacao-faixas {
+    border-radius: 18px;
+    padding: 32px 30px;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .premiacao-faixas-titulo {
+    font-size: 26px;
+  }
+
+  .premiacao-faixas-descricao {
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+
+  .premiacao-faixas-chips {
+    gap: 12px;
+  }
+
+  .chip-faixa {
+    font-size: 14px;
+    padding: 11px 22px;
   }
 
   .filtros {

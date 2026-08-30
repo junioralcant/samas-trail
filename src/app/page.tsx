@@ -26,6 +26,24 @@ const FORM_INICIAL: FormState = {
   equipe: "",
 };
 
+const PREMIACAO = [
+  {
+    distancia: "8KM",
+    etiqueta: "Apenas classificação geral",
+    valores: [400, 300, 200],
+  },
+  { distancia: "18KM", etiqueta: "Geral", valores: [600, 450, 250] },
+];
+
+const CATEGORIAS = ["Masculino", "Feminino"];
+
+const FAIXAS_18KM = [
+  "16 a 29 anos",
+  "30 a 39 anos",
+  "40 a 49 anos",
+  "50+ anos",
+];
+
 const eventDate = process.env.NEXT_PUBLIC_EVENT_DATE ?? "Data a definir";
 const eventLocation =
   process.env.NEXT_PUBLIC_EVENT_LOCATION ?? "Local a definir";
@@ -345,8 +363,8 @@ export default function InscricaoPage() {
               />
             </svg>
             <div className="info-prova-texto">
-              Largada no Povoado Água Preta. Hidratação no percurso e resgate em
-              toda a prova.
+              Largada às 6h00 no Povoado Água Preta. Hidratação a cada 4km e
+              resgate em todo o percurso.
             </div>
           </div>
         </section>
@@ -519,9 +537,109 @@ export default function InscricaoPage() {
               ? "Redirecionando para o pagamento..."
               : `Inscrever-se — ${formatarPreco(total)}`}
           </button>
-          <div className="nota-rodape">Pagamento via Pix ou cartão.</div>
+          <div className="nota-rodape">
+            Pagamento via Pix ou cartão · vagas limitadas a 400 atletas
+          </div>
         </form>
       </div>
+
+      <div className="divisor-premiacao" />
+
+      <section className="secao-premiacao">
+        <div className="premiacao-splatter" />
+        <div className="premiacao-cabecalho">
+          <div className="premiacao-cabecalho-texto">
+            <div className="premiacao-titulo-linha">
+              <div className="premiacao-barra" />
+              <h2 className="titulo-secao display">Premiação</h2>
+            </div>
+            <div className="premiacao-subtitulo">
+              2ª edição · 8km e 18km — premiação do 1º ao 3º lugar
+            </div>
+          </div>
+          <svg
+            className="premiacao-trilha"
+            width="360"
+            height="26"
+            viewBox="0 0 360 26"
+            fill="none"
+          >
+            <path
+              d="M3 20C60 4 110 24 168 12s112-12 189 4"
+              stroke="#FFFFFF"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray="0.1 12"
+            />
+          </svg>
+        </div>
+
+        <div className="premiacao-cards">
+          {PREMIACAO.map((premio) => (
+            <div className="premiacao-card" key={premio.distancia}>
+              <div className="premiacao-card-topo">
+                <div className="premiacao-km display">{premio.distancia}</div>
+                <div className="premiacao-etiqueta">{premio.etiqueta}</div>
+              </div>
+
+              {premio.distancia === "8KM" && (
+                <div className="premiacao-aviso">
+                  <div className="premiacao-aviso-icone">!</div>
+                  <div className="premiacao-aviso-texto">
+                    <div className="premiacao-aviso-titulo display">
+                      O 8km premia só a geral
+                    </div>
+                    <div>
+                      Apenas 1º, 2º e 3º lugar da classificação geral masculina
+                      e feminina — cada um recebe{" "}
+                      <strong>medalha + troféu + prêmio em dinheiro</strong>. No
+                      8km <strong>não há premiação por faixa etária</strong> —
+                      nem dinheiro, nem troféu.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="premiacao-listas">
+                {CATEGORIAS.map((categoria) => (
+                  <div className="premiacao-lista" key={categoria}>
+                    <div className="premiacao-lista-rotulo">{categoria}</div>
+                    {premio.valores.map((valor, indice) => (
+                      <div className="premiacao-linha" key={valor}>
+                        <span className="premiacao-colocacao">
+                          {indice + 1}º · medalha + troféu
+                        </span>
+                        <span className="premiacao-valor display">
+                          R$ {valor}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="premiacao-faixas">
+          <div className="premiacao-faixas-texto">
+            <div className="premiacao-faixas-titulo display">
+              Faixas de idade — 18km
+            </div>
+            <div className="premiacao-faixas-descricao">
+              Exclusivo do 18km · masculino e feminino · 1º ao 3º lugar recebem
+              medalha + troféu. <strong>Não vale para o 8km.</strong>
+            </div>
+          </div>
+          <div className="premiacao-faixas-chips">
+            {FAIXAS_18KM.map((faixa) => (
+              <div className="chip-faixa" key={faixa}>
+                {faixa}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
