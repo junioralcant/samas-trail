@@ -1,5 +1,6 @@
 import { getAppUrl } from "./config";
 import { enviarEmail } from "./email";
+import { ehMenorDeIdade } from "./idade";
 import type { Inscricao } from "./types";
 
 const PREHEADER =
@@ -22,6 +23,16 @@ const linhaDetalhe = (
 
 const valorComum = (texto: string) =>
   `font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:20px; mso-line-height-rule:exactly; font-weight:bold; color:#FFFFFF;">${texto}`;
+
+/** "2026-08-31 18:22:05" -> "31/08/2026 as 18:22" */
+const formatarAceite = (valor: string) => {
+  const partes = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(valor);
+  if (!partes) {
+    return valor;
+  }
+  const [, ano, mes, dia, hora, minuto] = partes;
+  return `${dia}/${mes}/${ano} às ${hora}:${minuto}`;
+};
 
 const valorDestaque = (texto: string, cor: string) =>
   `font-family:'Arial Black', Arial, Helvetica, sans-serif; font-style:italic; font-size:18px; line-height:20px; mso-line-height-rule:exactly; color:${cor};">${texto}`;
@@ -47,6 +58,32 @@ export const enviarEmailInscricaoConfirmada = async (
           )})`,
         ),
       )
+    : "";
+  const linhaTermo = inscricao.termo_aceito_em
+    ? linhaDetalhe(
+        "Termo aceito em",
+        valorComum(
+          `${formatarAceite(inscricao.termo_aceito_em)}${
+            inscricao.termo_versao ? ` (v${inscricao.termo_versao})` : ""
+          }`,
+        ),
+        { ultima: true },
+      )
+    : "";
+  const menorHtml = ehMenorDeIdade(inscricao.data_nascimento)
+    ? `
+    <tr>
+      <td style="padding:16px 28px 0 28px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%; background-color:#1a1200; border:1px solid #FBBF24; border-radius:12px; border-collapse:separate;">
+          <tr>
+            <td style="padding:20px 22px;">
+              <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:16px; mso-line-height-rule:exactly; letter-spacing:1.5px; color:#FBBF24; text-transform:uppercase; font-weight:bold;">Atleta menor de 18 anos</div>
+              <div style="font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:23px; mso-line-height-rule:exactly; color:#FDE68A; padding-top:8px;">Na retirada do kit é obrigatório apresentar o Termo de Responsabilidade impresso e assinado pelo responsável legal, junto com o documento de identidade dele. Sem isso o kit não pode ser liberado.</div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>`
     : "";
   const linkInscricao = inscricao.kit_token
     ? `${getAppUrl()}/inscricao/${inscricao.kit_token}`
@@ -157,8 +194,9 @@ export const enviarEmailInscricaoConfirmada = async (
           ${linhaDetalhe("Data da prova", valorComum(eventDate))}
           ${linhaDetalhe("Local", valorComum(localHtml))}
           ${linhaDetalhe("Camiseta", valorComum(inscricao.tamanho_camiseta), {
-            ultima: true,
+            ultima: linhaTermo === "",
           })}
+          ${linhaTermo}
         </table>
       </td>
     </tr>
@@ -175,6 +213,8 @@ export const enviarEmailInscricaoConfirmada = async (
         </table>
       </td>
     </tr>
+
+${menorHtml}
 
 ${qrHtml}
 

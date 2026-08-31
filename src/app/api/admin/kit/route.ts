@@ -11,6 +11,8 @@ const resumo = (inscricao: Inscricao) => ({
   equipe: inscricao.equipe,
   status_pagamento: inscricao.status_pagamento,
   kit_retirado_em: inscricao.kit_retirado_em,
+  data_nascimento: inscricao.data_nascimento,
+  termo_aceito_em: inscricao.termo_aceito_em,
 });
 
 export async function POST(request: Request) {

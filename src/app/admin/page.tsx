@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { calcularIdade, ehMenorDeIdade } from "@/lib/idade";
 import LeitorKit from "./LeitorKit";
 
 type Distancia = "8km" | "18km";
@@ -22,6 +23,8 @@ type Inscricao = {
   desconto: number;
   status_pagamento: StatusPagamento;
   kit_retirado_em: string | null;
+  termo_aceito_em: string | null;
+  termo_versao: string | null;
   criado_em: string;
 };
 
@@ -42,6 +45,8 @@ type Stats = {
   pendentes: number;
   receita: number;
   kitsRetirados: number;
+  menoresDeIdade: number;
+  semTermo: number;
 };
 
 const eventDate = process.env.NEXT_PUBLIC_EVENT_DATE ?? "";
@@ -343,6 +348,15 @@ export default function AdminPage() {
               <div className="stat-nota">pagamentos aprovados</div>
             </div>
             <div className="stat-card">
+              <div className="stat-rotulo">Menores de 18</div>
+              <div className="stat-valor display">{stats.menoresDeIdade}</div>
+              <div className="stat-nota">
+                {stats.menoresDeIdade > 0
+                  ? "exigir termo do responsável no kit"
+                  : "nenhum inscrito menor de idade"}
+              </div>
+            </div>
+            <div className="stat-card">
               <div className="stat-rotulo">Kits retirados</div>
               <div className="stat-valor display">{stats.kitsRetirados}</div>
               <div className="stat-nota">
@@ -433,7 +447,31 @@ export default function AdminPage() {
                     className="tabela-colunas tabela-linha"
                     key={inscricao.id}
                   >
-                    <div className="celula-nome">{inscricao.nome}</div>
+                    <div className="celula-nome">
+                      {inscricao.nome}
+                      {(ehMenorDeIdade(inscricao.data_nascimento) ||
+                        !inscricao.termo_aceito_em) && (
+                        <span className="celula-alertas">
+                          {ehMenorDeIdade(inscricao.data_nascimento) && (
+                            <span
+                              className="badge-alerta"
+                              title="Menor de 18 anos: exigir Termo de Responsabilidade assinado pelo responsável legal na retirada do kit"
+                            >
+                              menor · {calcularIdade(inscricao.data_nascimento)}{" "}
+                              anos
+                            </span>
+                          )}
+                          {!inscricao.termo_aceito_em && (
+                            <span
+                              className="badge-alerta badge-alerta-vermelho"
+                              title="Inscrição sem aceite do termo registrado: colher o termo assinado em papel"
+                            >
+                              sem termo
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </div>
                     <div className="celula-numerica">
                       {formatarCpf(inscricao.cpf)}
                     </div>

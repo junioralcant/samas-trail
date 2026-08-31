@@ -21,6 +21,10 @@ export type Inscricao = {
   desconto: number;
   kit_token: string | null;
   kit_retirado_em: string | null;
+  termo_aceito_em: string | null;
+  termo_versao: string | null;
+  termo_ip: string | null;
+  termo_user_agent: string | null;
   criado_em: string;
 };
 
@@ -41,6 +45,7 @@ export type NovaInscricaoPayload = {
   equipe?: string;
   distancia: Distancia;
   cupom?: string;
+  termoAceito?: boolean;
 };
 
 export type Cupom = {

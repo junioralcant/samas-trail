@@ -557,6 +557,219 @@ a:hover {
   font-weight: 700;
 }
 
+/* --- aceite do termo de responsabilidade --- */
+
+.aviso-menor {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 14px;
+  border: 1px solid var(--ambar-badge);
+  background: rgba(251, 191, 36, 0.12);
+  border-radius: 12px;
+}
+
+.aviso-menor-icone {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--ambar-badge);
+  color: #1a1200;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aviso-menor-texto {
+  font-size: 12.5px;
+  color: var(--texto);
+  line-height: 1.55;
+}
+
+.aviso-menor-texto strong {
+  color: var(--branco);
+  font-weight: 700;
+}
+
+.bloco-termo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--borda-media);
+  border-radius: 12px;
+  background: #0f0f0f;
+}
+
+.campo-termo {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--texto);
+  line-height: 1.5;
+}
+
+.campo-termo input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  accent-color: var(--vermelho);
+  cursor: pointer;
+}
+
+.campo-termo strong {
+  color: var(--branco);
+  font-weight: 700;
+}
+
+.link-termo {
+  align-self: flex-start;
+  margin-left: 31px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vermelho);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link-termo:hover {
+  color: var(--vermelho-hover);
+}
+
+.termo-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(5, 5, 5, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.termo-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 680px;
+  max-height: 100%;
+  background: var(--painel);
+  border: 1px solid var(--borda-media);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.termo-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--borda-suave);
+}
+
+.termo-titulo {
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  color: var(--branco);
+}
+
+.termo-versao {
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cinza-escuro);
+}
+
+.termo-corpo {
+  overflow-y: auto;
+  padding: 18px 20px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.termo-abertura {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--texto);
+}
+
+.termo-clausulas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.termo-clausulas li {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--cinza);
+}
+
+.termo-letra {
+  font-weight: 700;
+  color: var(--vermelho);
+}
+
+.termo-rodape {
+  padding: 16px 20px;
+  border-top: 1px solid var(--borda-suave);
+}
+
+.celula-alertas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.badge-alerta {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: rgba(251, 191, 36, 0.14);
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  color: var(--ambar-badge);
+  cursor: help;
+}
+
+.badge-alerta-vermelho {
+  background: rgba(225, 6, 0, 0.14);
+  border-color: rgba(225, 6, 0, 0.6);
+  color: #ff6b63;
+}
+
+.leitor-atleta-alerta {
+  margin-top: 9px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  color: var(--ambar-badge);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
 .grid-form {
   display: grid;
   grid-template-columns: 1fr;
@@ -1154,6 +1367,14 @@ a:hover {
   font-size: 12px;
   color: var(--cinza);
   text-align: center;
+}
+
+.retorno-aviso-atencao {
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  color: #fde68a;
+  font-weight: 600;
+  line-height: 1.55;
 }
 
 .verificador-pagamento {

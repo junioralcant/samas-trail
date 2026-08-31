@@ -4,6 +4,7 @@ import { limparCpf, validarCpf } from "@/lib/cpf";
 import { aplicarCupom } from "@/lib/cupom";
 import { gerarKitToken, getDb } from "@/lib/db";
 import { getPreferenceClient } from "@/lib/mercadopago";
+import { TERMO_VERSAO } from "@/lib/termo";
 import {
   buscarPagamentoAprovadoMp,
   registrarStatusPagamento,
@@ -50,6 +51,21 @@ export async function POST(request: Request) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email.trim())) {
     return NextResponse.json({ erro: "E-mail inválido" }, { status: 400 });
   }
+
+  // O checkbox do formulario nao vale como prova: o aceite tem que ser
+  // exigido aqui tambem, junto da versao do termo aceita.
+  if (payload.termoAceito !== true) {
+    return NextResponse.json(
+      { erro: "É necessário aceitar o Termo de Responsabilidade" },
+      { status: 400 },
+    );
+  }
+
+  const termoIp =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    null;
+  const termoUserAgent = request.headers.get("user-agent");
 
   const db = getDb();
 
@@ -111,7 +127,9 @@ export async function POST(request: Request) {
       `UPDATE inscricoes SET
         nome = ?, email = ?, telefone = ?, data_nascimento = ?, sexo = ?,
         tamanho_camiseta = ?, equipe = ?, distancia = ?, valor = ?,
-        cupom_codigo = ?, desconto = ?
+        cupom_codigo = ?, desconto = ?,
+        termo_aceito_em = datetime('now', 'localtime'), termo_versao = ?,
+        termo_ip = ?, termo_user_agent = ?
        WHERE id = ?`,
     ).run(
       payload.nome.trim(),
@@ -125,6 +143,9 @@ export async function POST(request: Request) {
       valor,
       cupomCodigo,
       desconto,
+      TERMO_VERSAO,
+      termoIp,
+      termoUserAgent,
       existente.id,
     );
     inscricaoId = existente.id;
@@ -132,8 +153,9 @@ export async function POST(request: Request) {
     const resultado = db
       .prepare(
         `INSERT INTO inscricoes
-          (nome, cpf, email, telefone, data_nascimento, sexo, tamanho_camiseta, equipe, distancia, valor, cupom_codigo, desconto, kit_token)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (nome, cpf, email, telefone, data_nascimento, sexo, tamanho_camiseta, equipe, distancia, valor, cupom_codigo, desconto, kit_token,
+           termo_aceito_em, termo_versao, termo_ip, termo_user_agent)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?)`,
       )
       .run(
         payload.nome.trim(),
@@ -149,6 +171,9 @@ export async function POST(request: Request) {
         cupomCodigo,
         desconto,
         gerarKitToken(),
+        TERMO_VERSAO,
+        termoIp,
+        termoUserAgent,
       );
     inscricaoId = Number(resultado.lastInsertRowid);
   }

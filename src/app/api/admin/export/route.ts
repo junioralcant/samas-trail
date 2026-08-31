@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { calcularIdade, ehMenorDeIdade } from "@/lib/idade";
 import type { Inscricao } from "@/lib/types";
 
 const CSV_HEADER = [
@@ -19,6 +20,11 @@ const CSV_HEADER = [
   "Valor",
   "Status",
   "Kit retirado em",
+  "Idade",
+  "Menor de idade",
+  "Termo aceito em",
+  "Termo versao",
+  "Termo IP",
   "Inscrito em",
 ];
 
@@ -53,6 +59,11 @@ export async function GET() {
       i.valor.toFixed(2).replace(".", ","),
       i.status_pagamento,
       i.kit_retirado_em,
+      calcularIdade(i.data_nascimento),
+      ehMenorDeIdade(i.data_nascimento) ? "sim" : "nao",
+      i.termo_aceito_em,
+      i.termo_versao,
+      i.termo_ip,
       i.criado_em,
     ]
       .map(escapeCsv)

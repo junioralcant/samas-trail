@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type ChangeEvent, type FormEvent } from "react";
+import { ehMenorDeIdade } from "@/lib/idade";
+import ModalTermo from "./ModalTermo";
 
 type Distancia = "8km" | "18km";
 
@@ -86,6 +88,11 @@ export default function InscricaoPage() {
   );
   const [validandoCupom, setValidandoCupom] = useState(false);
   const [erroCupom, setErroCupom] = useState<string | null>(null);
+  const [termoAceito, setTermoAceito] = useState(false);
+  const [termoAberto, setTermoAberto] = useState(false);
+
+  const menorDeIdade =
+    form.dataNascimento !== "" && ehMenorDeIdade(form.dataNascimento);
 
   const preco = distancia === "8km" ? preco8km : preco18km;
   const desconto = cupomAplicado?.desconto ?? 0;
@@ -160,6 +167,7 @@ export default function InscricaoPage() {
           ...form,
           distancia,
           cupom: cupomAplicado?.codigo,
+          termoAceito,
         }),
       });
       const data = await response.json();
@@ -516,6 +524,43 @@ export default function InscricaoPage() {
             )}
           </div>
 
+          {menorDeIdade && (
+            <div className="aviso-menor">
+              <div className="aviso-menor-icone">!</div>
+              <div className="aviso-menor-texto">
+                Atleta com menos de 18 anos: além do aceite aqui, é obrigatório
+                levar o{" "}
+                <strong>
+                  Termo de Responsabilidade impresso e assinado pelo responsável
+                  legal
+                </strong>
+                , com o documento de identidade dele, na retirada do kit.
+              </div>
+            </div>
+          )}
+
+          <div className="bloco-termo">
+            <label className="campo-termo">
+              <input
+                type="checkbox"
+                required
+                checked={termoAceito}
+                onChange={(event) => setTermoAceito(event.target.checked)}
+              />
+              <span>
+                Li e aceito o <strong>Termo de Responsabilidade</strong> da
+                prova, incluindo a assunção dos riscos da participação.
+              </span>
+            </label>
+            <button
+              className="link-termo"
+              type="button"
+              onClick={() => setTermoAberto(true)}
+            >
+              Ler o termo completo
+            </button>
+          </div>
+
           {erro && (
             <div className="banner-erro">
               <div className="banner-erro-icone">!</div>
@@ -654,6 +699,18 @@ export default function InscricaoPage() {
           </div>
         </div>
       </section>
+
+      {termoAberto && (
+        <ModalTermo
+          nome={form.nome}
+          documento={form.cpf}
+          aoFechar={() => setTermoAberto(false)}
+          aoAceitar={() => {
+            setTermoAceito(true);
+            setTermoAberto(false);
+          }}
+        />
+      )}
     </main>
   );
 }

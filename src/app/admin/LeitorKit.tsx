@@ -2,6 +2,7 @@
 
 import jsQR from "jsqr";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { calcularIdade, ehMenorDeIdade } from "@/lib/idade";
 
 type ResumoInscricao = {
   id: number;
@@ -11,6 +12,8 @@ type ResumoInscricao = {
   equipe: string | null;
   status_pagamento: string;
   kit_retirado_em: string | null;
+  data_nascimento: string;
+  termo_aceito_em: string | null;
 };
 
 type Resultado =
@@ -199,6 +202,20 @@ export default function LeitorKit({ onConfirmado }: LeitorKitProps) {
                     ? ` · ${resultado.inscricao.equipe}`
                     : ""}
                 </div>
+                {ehMenorDeIdade(resultado.inscricao.data_nascimento) && (
+                  <div className="leitor-atleta-alerta">
+                    ⚠ MENOR DE IDADE (
+                    {calcularIdade(resultado.inscricao.data_nascimento)} anos) —
+                    exija o Termo de Responsabilidade impresso e assinado pelo
+                    responsável legal, com o documento de identidade dele.
+                  </div>
+                )}
+                {!resultado.inscricao.termo_aceito_em && (
+                  <div className="leitor-atleta-alerta">
+                    ⚠ SEM ACEITE DO TERMO no sistema — colha o termo assinado em
+                    papel antes de liberar o kit.
+                  </div>
+                )}
               </div>
             )}
           </div>

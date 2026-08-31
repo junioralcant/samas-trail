@@ -46,7 +46,13 @@ export async function GET(request: Request) {
          COALESCE(SUM(CASE WHEN status_pagamento = 'pago' THEN 1 ELSE 0 END), 0) AS pagos,
          COALESCE(SUM(CASE WHEN status_pagamento = 'pendente' THEN 1 ELSE 0 END), 0) AS pendentes,
          COALESCE(SUM(CASE WHEN status_pagamento = 'pago' THEN valor ELSE 0 END), 0) AS receita,
-         COALESCE(SUM(CASE WHEN kit_retirado_em IS NOT NULL THEN 1 ELSE 0 END), 0) AS kitsRetirados
+         COALESCE(SUM(CASE WHEN kit_retirado_em IS NOT NULL THEN 1 ELSE 0 END), 0) AS kitsRetirados,
+         -- (AAAAMMDD_hoje - AAAAMMDD_nascimento) / 10000 = idade em anos
+         -- completos; < 180000 e menor de 18 sem erro de arredondamento.
+         COALESCE(SUM(CASE WHEN CAST(strftime('%Y%m%d', 'now', 'localtime') AS INTEGER)
+                                - CAST(strftime('%Y%m%d', data_nascimento) AS INTEGER) < 180000
+                    THEN 1 ELSE 0 END), 0) AS menoresDeIdade,
+         COALESCE(SUM(CASE WHEN termo_aceito_em IS NULL THEN 1 ELSE 0 END), 0) AS semTermo
        FROM inscricoes`,
     )
     .get();

@@ -60,6 +60,16 @@ const migrar = (database: DatabaseSync) => {
       "ALTER TABLE inscricoes ADD COLUMN desconto REAL NOT NULL DEFAULT 0",
     );
   }
+  for (const coluna of [
+    "termo_aceito_em",
+    "termo_versao",
+    "termo_ip",
+    "termo_user_agent",
+  ]) {
+    if (!nomes.has(coluna)) {
+      database.exec(`ALTER TABLE inscricoes ADD COLUMN ${coluna} TEXT`);
+    }
+  }
   database.exec(
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_inscricoes_kit_token ON inscricoes (kit_token)",
   );

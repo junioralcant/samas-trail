@@ -32,6 +32,25 @@ npm run dev
 | `ADMIN_PASSWORD`                                        | Senha do painel `/admin`                                             |
 | `DATABASE_PATH`                                         | Caminho do arquivo SQLite (no Railway: `/data/corrida.db` no volume) |
 
+## Termo de Responsabilidade
+
+O texto fica em `src/lib/termo.ts` e e aceito por checkbox obrigatorio no
+formulario (validado tambem no `POST /api/inscricoes`). Cada inscricao guarda
+`termo_aceito_em`, `termo_versao`, `termo_ip` e `termo_user_agent`.
+
+Regra: **toda alteracao no texto exige bump em `TERMO_VERSAO`** — a versao
+gravada em cada inscricao so vale como prova se permitir reproduzir a redacao
+exata que o atleta aceitou. Isso inclui mudar a data da prova.
+
+Inscricoes anteriores a essa funcionalidade tem `termo_aceito_em` nulo e
+aparecem no painel com a tarja **sem termo**: o termo assinado precisa ser
+colhido em papel na retirada do kit.
+
+Atletas com menos de 18 anos aceitam pelo site, mas o painel, o leitor de QR,
+o e-mail e a pagina do kit avisam que a via impressa assinada pelo responsavel
+legal e obrigatoria na retirada. A idade e sempre calculada na hora, nunca
+gravada.
+
 ## Fluxo de pagamento
 
 1. Atleta preenche o formulário e escolhe a distância → `POST /api/inscricoes` grava a inscrição como `pendente` e cria uma _preference_ no Mercado Pago.

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDb } from "@/lib/db";
+import { ehMenorDeIdade } from "@/lib/idade";
 import type { Inscricao } from "@/lib/types";
 
 type PaginaInscricaoProps = {
@@ -36,6 +37,7 @@ export default async function PaginaInscricao({
   }
 
   const paga = inscricao.status_pagamento === "pago";
+  const menor = ehMenorDeIdade(inscricao.data_nascimento);
 
   return (
     <main className="pagina-retorno textura">
@@ -105,6 +107,14 @@ export default async function PaginaInscricao({
                   Apresente este QR code à organização na retirada do seu kit
                   de atleta.
                 </div>
+                {menor && (
+                  <div className="retorno-aviso retorno-aviso-atencao">
+                    Atleta menor de 18 anos: leve também o Termo de
+                    Responsabilidade impresso e assinado pelo responsável legal,
+                    com o documento de identidade dele. Sem isso o kit não pode
+                    ser liberado.
+                  </div>
+                )}
               </>
             )}
           </>
