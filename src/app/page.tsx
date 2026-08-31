@@ -264,7 +264,7 @@ export default function InscricaoPage() {
             <div className="kit-card-texto">
               <div className="kit-card-nome">Camiseta oficial</div>
               <div className="kit-card-descricao">
-                Camiseta oficial do evento, tecido esportivo com mangas
+                Camiseta oficial do evento, em tecido esportivo, com mangas
                 exclusivas.
               </div>
             </div>
@@ -590,8 +590,8 @@ export default function InscricaoPage() {
                       O 8km premia só a geral
                     </div>
                     <div>
-                      Apenas 1º, 2º e 3º lugar da classificação geral masculina
-                      e feminina — cada um recebe{" "}
+                      Apenas 1º, 2º e 3º lugares da classificação geral
+                      masculina e feminina — cada um recebe{" "}
                       <strong>medalha + troféu + prêmio em dinheiro</strong>. No
                       8km <strong>não há premiação por faixa etária</strong> —
                       nem dinheiro, nem troféu.
@@ -627,7 +627,7 @@ export default function InscricaoPage() {
               Faixas de idade — 18km
             </div>
             <div className="premiacao-faixas-descricao">
-              Exclusivo do 18km · masculino e feminino · 1º ao 3º lugar recebem
+              Exclusivas do 18km · masculino e feminino · do 1º ao 3º lugar:
               medalha + troféu. <strong>Não vale para o 8km.</strong>
             </div>
           </div>

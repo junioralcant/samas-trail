@@ -76,8 +76,8 @@ export default function VerificadorPagamento({
     <div className="verificador-pagamento">
       <span className="verificador-spinner" />
       <span className="verificador-texto">
-        Esta página confirma sozinha assim que o pagamento for aprovado — não
-        precisa recarregar.
+        Esta página se atualiza sozinha assim que o pagamento for aprovado —
+        não precisa recarregar.
       </span>
     </div>
   );

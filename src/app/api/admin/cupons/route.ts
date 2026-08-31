@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   const codigo = normalizarCodigo(payload.codigo ?? "");
   if (!CODIGO_REGEX.test(codigo)) {
     return NextResponse.json(
-      { erro: "Código deve ter de 3 a 20 caracteres (letras, números ou -)" },
+      { erro: "O código deve ter de 3 a 20 caracteres (letras, números ou -)" },
       { status: 400 },
     );
   }
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   const desconto = arredondar(Number(payload.desconto));
   if (!Number.isFinite(desconto) || desconto <= 0) {
     return NextResponse.json(
-      { erro: "Desconto deve ser maior que zero" },
+      { erro: "O desconto deve ser maior que zero" },
       { status: 400 },
     );
   }

@@ -306,14 +306,14 @@ export default function AdminPage() {
               <div className="stat-nota">prova em {eventDate}</div>
             </div>
             <div className="stat-card">
-              <div className="stat-rotulo">8 km</div>
+              <div className="stat-rotulo">8km</div>
               <div className="stat-valor display">{stats.total8km}</div>
               <div className="stat-nota">
                 {percentual(stats.total8km, stats.total)}
               </div>
             </div>
             <div className="stat-card">
-              <div className="stat-rotulo">18 km</div>
+              <div className="stat-rotulo">18km</div>
               <div className="stat-valor display">{stats.total18km}</div>
               <div className="stat-nota">
                 {percentual(stats.total18km, stats.total)}
@@ -544,8 +544,8 @@ export default function AdminPage() {
             <div>
               <div className="cupons-titulo display">Cupons de desconto</div>
               <div className="cupons-subtitulo">
-                Desconto em reais sobre o valor da inscrição. Sem validade, o
-                cupom vale enquanto estiver ativo.
+                Desconto em reais sobre o valor da inscrição. Sem data de
+                validade, o cupom vale enquanto estiver ativo.
               </div>
             </div>
           </div>
