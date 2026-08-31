@@ -3,6 +3,8 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { ehMenorDeIdade } from "@/lib/idade";
 import ModalTermo from "./ModalTermo";
+import VisualizadorKit from "./VisualizadorKit";
+import { ITENS_KIT } from "./itensKit";
 
 type Distancia = "8km" | "18km";
 
@@ -90,6 +92,7 @@ export default function InscricaoPage() {
   const [erroCupom, setErroCupom] = useState<string | null>(null);
   const [termoAceito, setTermoAceito] = useState(false);
   const [termoAberto, setTermoAberto] = useState(false);
+  const [itemKitAberto, setItemKitAberto] = useState<number | null>(null);
 
   const menorDeIdade =
     form.dataNascimento !== "" && ehMenorDeIdade(form.dataNascimento);
@@ -266,49 +269,55 @@ export default function InscricaoPage() {
           </svg>
         </div>
         <div className="kit-cards">
-          <div className="kit-card">
-            <img
-              className="kit-foto-camiseta"
-              src="/kit/camiseta.jpeg"
-              alt="Camiseta oficial SAMAS TRAIL"
-            />
-            <div className="kit-badge">Incluso</div>
-            <div className="kit-card-texto">
-              <div className="kit-card-nome">Camiseta oficial</div>
-              <div className="kit-card-descricao">
-                Camiseta oficial do evento, em tecido esportivo, com mangas
-                exclusivas.
+          {ITENS_KIT.map((item, indice) => (
+            <button
+              className="kit-card"
+              key={item.id}
+              type="button"
+              onClick={() => setItemKitAberto(indice)}
+              aria-label={`Ampliar foto: ${item.nome}`}
+            >
+              <div className="kit-card-foto">
+                <img
+                  className={item.classeFoto}
+                  src={item.imagem}
+                  alt={item.alt}
+                />
+                <span className="kit-lupa" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle
+                      cx="10.5"
+                      cy="10.5"
+                      r="6.5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                    <path
+                      d="M15.5 15.5 21 21M10.5 7.5v6M7.5 10.5h6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
               </div>
-            </div>
-          </div>
-          <div className="kit-card">
-            <img
-              className="kit-foto-medalha"
-              src="/kit/medalha.jpeg"
-              alt="Medalha de finisher SAMAS TRAIL"
-            />
-            <div className="kit-card-texto">
-              <div className="kit-card-nome">Medalha de finisher</div>
-              <div className="kit-card-descricao">
-                Medalha exclusiva SAMAS TRAIL para quem cruza a linha de
-                chegada.
+              {item.badge && (
+                <div
+                  className={
+                    item.badge.contorno
+                      ? "kit-badge kit-badge-contorno"
+                      : "kit-badge"
+                  }
+                >
+                  {item.badge.texto}
+                </div>
+              )}
+              <div className="kit-card-texto">
+                <div className="kit-card-nome">{item.nome}</div>
+                <div className="kit-card-descricao">{item.descricao}</div>
               </div>
-            </div>
-          </div>
-          <div className="kit-card">
-            <img
-              className="kit-foto-pulseira"
-              src="/kit/pulseira.jpeg"
-              alt="Pulseira exclusiva SAMAS TRAIL 2026"
-            />
-            <div className="kit-badge kit-badge-contorno">Edição 2026</div>
-            <div className="kit-card-texto">
-              <div className="kit-card-nome">Pulseira exclusiva</div>
-              <div className="kit-card-descricao">
-                Pulseira colecionável da edição 2026.
-              </div>
-            </div>
-          </div>
+            </button>
+          ))}
         </div>
       </section>
 
@@ -699,6 +708,15 @@ export default function InscricaoPage() {
           </div>
         </div>
       </section>
+
+      {itemKitAberto !== null && (
+        <VisualizadorKit
+          itens={ITENS_KIT}
+          indice={itemKitAberto}
+          aoFechar={() => setItemKitAberto(null)}
+          aoTrocar={setItemKitAberto}
+        />
+      )}
 
       {termoAberto && (
         <ModalTermo

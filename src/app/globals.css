@@ -312,9 +312,33 @@ a:hover {
 
 .kit-card {
   position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  text-align: left;
+  color: inherit;
   background: var(--painel-claro);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.kit-card:hover {
+  border-color: rgba(225, 6, 0, 0.55);
+  transform: translateY(-2px);
+}
+
+.kit-card:focus-visible {
+  outline: 2px solid var(--vermelho);
+  outline-offset: 2px;
+}
+
+.kit-card-foto {
+  position: relative;
   overflow: hidden;
 }
 
@@ -323,6 +347,35 @@ a:hover {
   height: 170px;
   object-fit: cover;
   display: block;
+  transition: transform 0.35s ease;
+}
+
+.kit-card:hover img {
+  transform: scale(1.04);
+}
+
+.kit-lupa {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: rgba(10, 10, 10, 0.72);
+  border: 1px solid var(--borda-media);
+  color: var(--branco);
+  backdrop-filter: blur(4px);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.kit-card:hover .kit-lupa {
+  background: var(--vermelho);
+  border-color: var(--vermelho);
 }
 
 .kit-foto-camiseta {
@@ -375,6 +428,157 @@ a:hover {
   font-size: 12.5px;
   color: var(--cinza);
   line-height: 1.5;
+}
+
+.visualizador-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(5, 5, 5, 0.9);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: visualizador-entrada 0.18s ease-out;
+}
+
+@keyframes visualizador-entrada {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.visualizador-card {
+  display: flex;
+  flex-direction: column;
+  /* Largura sai da foto: a legenda nao entra no calculo (width 0 + min-width 100%). */
+  width: fit-content;
+  min-width: min(320px, 100%);
+  max-width: min(860px, 100%);
+  max-height: 100%;
+  background: var(--painel);
+  border: 1px solid var(--borda-media);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.visualizador-palco {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  background: #0d0d0d;
+}
+
+.visualizador-imagem {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 58vh;
+  object-fit: contain;
+}
+
+.visualizador-fechar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--branco);
+  background: rgba(10, 10, 10, 0.72);
+  border: 1px solid var(--borda-media);
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
+.visualizador-fechar:hover {
+  background: var(--vermelho);
+  border-color: var(--vermelho);
+}
+
+.visualizador-legenda {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 20px 18px;
+  border-top: 1px solid var(--borda-suave);
+  width: 0;
+  min-width: 100%;
+}
+
+.visualizador-nome {
+  font-size: 19px;
+  color: var(--branco);
+  letter-spacing: 0.02em;
+}
+
+.visualizador-descricao {
+  font-size: 13px;
+  color: var(--cinza);
+  line-height: 1.5;
+  max-width: 560px;
+}
+
+.visualizador-navegacao {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.visualizador-seta {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  padding-bottom: 3px;
+  color: var(--branco);
+  background: var(--input-bg);
+  border: 1px solid var(--borda-media);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.visualizador-seta:hover {
+  background: var(--vermelho);
+  border-color: var(--vermelho);
+}
+
+.visualizador-pontos {
+  display: flex;
+  gap: 8px;
+  margin-right: auto;
+}
+
+.visualizador-ponto {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--borda-media);
+  background: transparent;
+  cursor: pointer;
+}
+
+.visualizador-ponto-ativo {
+  background: var(--vermelho);
+  border-color: var(--vermelho);
 }
 
 .conteudo {
@@ -2221,6 +2425,43 @@ a:hover {
 
   .kit-card img {
     height: 280px;
+  }
+
+  .kit-lupa {
+    right: 14px;
+    bottom: 14px;
+    width: 38px;
+    height: 38px;
+  }
+
+  .visualizador-imagem {
+    max-height: 66vh;
+  }
+
+  .visualizador-legenda {
+    padding: 20px 26px 22px;
+  }
+
+  .visualizador-nome {
+    font-size: 23px;
+  }
+
+  .visualizador-descricao {
+    font-size: 14.5px;
+  }
+
+  .visualizador-seta {
+    width: 38px;
+    height: 38px;
+    font-size: 24px;
+  }
+
+  .visualizador-nome {
+    font-size: 24px;
+  }
+
+  .visualizador-descricao {
+    font-size: 14.5px;
   }
 
   .kit-badge {
