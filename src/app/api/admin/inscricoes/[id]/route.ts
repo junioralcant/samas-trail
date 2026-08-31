@@ -3,6 +3,7 @@ import { isAdminAuthenticated } from "@/lib/auth";
 import { DISTANCIAS, getPreco, type Distancia } from "@/lib/config";
 import { VALOR_MINIMO, arredondar } from "@/lib/cupom";
 import { getDb } from "@/lib/db";
+import { registrarStatusPagamento } from "@/lib/pagamento";
 import type { Inscricao, StatusPagamento } from "@/lib/types";
 
 const STATUS_VALIDOS: StatusPagamento[] = ["pendente", "pago", "cancelado"];
@@ -61,10 +62,9 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (!STATUS_VALIDOS.includes(payload.statusPagamento)) {
       return NextResponse.json({ erro: "Status inválido" }, { status: 400 });
     }
-    db.prepare("UPDATE inscricoes SET status_pagamento = ? WHERE id = ?").run(
-      payload.statusPagamento,
-      inscricao.id,
-    );
+    // Mesmo caminho do webhook: a confirmacao manual tambem precisa disparar
+    // o e-mail (e a guarda de e-mail unico) em vez de so gravar o status.
+    await registrarStatusPagamento(inscricao.id, payload.statusPagamento, null);
   }
 
   if (payload.kitRetirado !== undefined) {
