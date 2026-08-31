@@ -26,6 +26,7 @@ npm run dev
 | `EVENT_NAME` / `NEXT_PUBLIC_EVENT_NAME`                 | Nome do evento                                                       |
 | `NEXT_PUBLIC_EVENT_DATE` / `NEXT_PUBLIC_EVENT_LOCATION` | Data e local exibidos na página                                      |
 | `PRECO_8KM` / `PRECO_18KM` (+ versões `NEXT_PUBLIC_`)   | Valores das inscrições                                               |
+| `NEXT_PUBLIC_LOTE_ATUAL`                                | Lote exibido na página (default `1º lote`)                           |
 | `MP_ACCESS_TOKEN`                                       | Access token do Mercado Pago (use o de TESTE em dev)                 |
 | `APP_URL`                                               | URL pública do app (back_urls e webhook do MP)                       |
 | `ADMIN_PASSWORD`                                        | Senha do painel `/admin`                                             |

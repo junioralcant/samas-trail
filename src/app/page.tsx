@@ -49,6 +49,7 @@ const eventLocation =
   process.env.NEXT_PUBLIC_EVENT_LOCATION ?? "Local a definir";
 const preco8km = Number(process.env.NEXT_PUBLIC_PRECO_8KM ?? "120.00");
 const preco18km = Number(process.env.NEXT_PUBLIC_PRECO_18KM ?? "150.00");
+const loteAtual = process.env.NEXT_PUBLIC_LOTE_ATUAL ?? "1º lote";
 
 const formatarPreco = (valor: number) =>
   valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -222,6 +223,9 @@ export default function InscricaoPage() {
           <div className="hero-chips">
             <div className="chip">📅 {eventDate}</div>
             <div className="chip">📍 {eventLocation}</div>
+            <div className="chip chip-lote">
+              🎟️ {loteAtual} · inscrições abertas
+            </div>
           </div>
         </div>
       </section>
@@ -323,6 +327,7 @@ export default function InscricaoPage() {
                   <div className="card-preco display">
                     {formatarPreco(preco8km)}
                   </div>
+                  <div className="card-lote">{loteAtual}</div>
                 </div>
               </div>
               <div className="card-veu" />
@@ -347,11 +352,20 @@ export default function InscricaoPage() {
                   <div className="card-preco display">
                     {formatarPreco(preco18km)}
                   </div>
+                  <div className="card-lote">{loteAtual}</div>
                 </div>
               </div>
               <div className="card-veu" />
               <div className="card-anel" />
             </button>
+          </div>
+          <div className="aviso-lote">
+            <div className="aviso-lote-icone">!</div>
+            <div className="aviso-lote-texto">
+              Você está se inscrevendo no <strong>{loteAtual}</strong>. Os
+              valores acima valem para este lote e estão sujeitos a reajuste nos
+              lotes seguintes.
+            </div>
           </div>
           <div className="info-prova">
             <svg width="40" height="20" viewBox="0 0 40 20" fill="none">
@@ -516,7 +530,7 @@ export default function InscricaoPage() {
 
           <div className="linha-total">
             <span className="linha-total-rotulo">
-              Total — {distancia}
+              Total — {distancia} · {loteAtual}
               {cupomAplicado && (
                 <span className="linha-total-desconto">
                   cupom {cupomAplicado.codigo}: −{formatarPreco(desconto)}
