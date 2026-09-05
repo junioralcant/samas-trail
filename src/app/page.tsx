@@ -4,6 +4,7 @@ import { useState, type ChangeEvent, type FormEvent } from "react";
 import { ehMenorDeIdade } from "@/lib/idade";
 import ModalTermo from "./ModalTermo";
 import VisualizadorKit from "./VisualizadorKit";
+import SecaoPatrocinadores from "./SecaoPatrocinadores";
 import { ITENS_KIT } from "./itensKit";
 
 type Distancia = "8km" | "18km";
@@ -708,6 +709,8 @@ export default function InscricaoPage() {
           </div>
         </div>
       </section>
+
+      <SecaoPatrocinadores />
 
       {itemKitAberto !== null && (
         <VisualizadorKit
