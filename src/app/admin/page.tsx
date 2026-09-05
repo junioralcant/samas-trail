@@ -13,6 +13,7 @@ type Inscricao = {
   cpf: string;
   email: string;
   telefone: string;
+  cidade: string | null;
   data_nascimento: string;
   sexo: string;
   tamanho_camiseta: string;
@@ -402,6 +403,7 @@ export default function AdminPage() {
                 <div>Atleta</div>
                 <div>CPF</div>
                 <div>Contato</div>
+                <div>Cidade</div>
                 <div>Camiseta</div>
                 <div>Equipe</div>
                 <div>Distância</div>
@@ -484,6 +486,9 @@ export default function AdminPage() {
                       <span className="celula-contato-fone">
                         {inscricao.telefone}
                       </span>
+                    </div>
+                    <div className="celula-secundaria">
+                      {inscricao.cidade ?? "—"}
                     </div>
                     <div className="celula-secundaria">
                       {inscricao.tamanho_camiseta}

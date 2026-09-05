@@ -15,6 +15,7 @@ type FormState = {
   cpf: string;
   email: string;
   telefone: string;
+  cidade: string;
   dataNascimento: string;
   sexo: string;
   tamanhoCamiseta: string;
@@ -26,6 +27,7 @@ const FORM_INICIAL: FormState = {
   cpf: "",
   email: "",
   telefone: "",
+  cidade: "",
   dataNascimento: "",
   sexo: "",
   tamanhoCamiseta: "",
@@ -442,6 +444,15 @@ export default function InscricaoPage() {
                 value={form.telefone}
                 onChange={atualizarCampo("telefone")}
                 placeholder="(98) 99999-9999"
+              />
+            </label>
+            <label className="campo">
+              <span className="campo-rotulo">Cidade</span>
+              <input
+                required
+                value={form.cidade}
+                onChange={atualizarCampo("cidade")}
+                placeholder="São Mateus do Maranhão"
               />
             </label>
             <label className="campo">

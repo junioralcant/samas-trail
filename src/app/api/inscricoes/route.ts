@@ -22,6 +22,7 @@ const CAMPOS_OBRIGATORIOS: (keyof NovaInscricaoPayload)[] = [
   "cpf",
   "email",
   "telefone",
+  "cidade",
   "dataNascimento",
   "sexo",
   "tamanhoCamiseta",
@@ -132,7 +133,7 @@ export async function POST(request: Request) {
     // gera um novo checkout, mantendo o mesmo id (external_reference).
     db.prepare(
       `UPDATE inscricoes SET
-        nome = ?, email = ?, telefone = ?, data_nascimento = ?, sexo = ?,
+        nome = ?, email = ?, telefone = ?, cidade = ?, data_nascimento = ?, sexo = ?,
         tamanho_camiseta = ?, equipe = ?, distancia = ?, valor = ?,
         cupom_codigo = ?, desconto = ?, lote = ?,
         termo_aceito_em = datetime('now', 'localtime'), termo_versao = ?,
@@ -142,6 +143,7 @@ export async function POST(request: Request) {
       payload.nome.trim(),
       payload.email.trim().toLowerCase(),
       payload.telefone.trim(),
+      payload.cidade.trim(),
       payload.dataNascimento,
       payload.sexo,
       payload.tamanhoCamiseta,
@@ -161,15 +163,16 @@ export async function POST(request: Request) {
     const resultado = db
       .prepare(
         `INSERT INTO inscricoes
-          (nome, cpf, email, telefone, data_nascimento, sexo, tamanho_camiseta, equipe, distancia, valor, cupom_codigo, desconto, lote, kit_token,
+          (nome, cpf, email, telefone, cidade, data_nascimento, sexo, tamanho_camiseta, equipe, distancia, valor, cupom_codigo, desconto, lote, kit_token,
            termo_aceito_em, termo_versao, termo_ip, termo_user_agent)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?)`,
       )
       .run(
         payload.nome.trim(),
         cpf,
         payload.email.trim().toLowerCase(),
         payload.telefone.trim(),
+        payload.cidade.trim(),
         payload.dataNascimento,
         payload.sexo,
         payload.tamanhoCamiseta,

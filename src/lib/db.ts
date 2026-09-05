@@ -60,6 +60,11 @@ const migrar = (database: DatabaseSync) => {
       "ALTER TABLE inscricoes ADD COLUMN desconto REAL NOT NULL DEFAULT 0",
     );
   }
+  // Cidade so passou a ser pedida depois das primeiras inscricoes: as
+  // antigas ficam sem o dado.
+  if (!nomes.has("cidade")) {
+    database.exec("ALTER TABLE inscricoes ADD COLUMN cidade TEXT");
+  }
   // O lote so passou a ser gravado a partir do 2o lote: tudo que ja
   // estava no banco foi vendido no 1o.
   if (!nomes.has("lote")) {

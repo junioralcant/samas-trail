@@ -2750,12 +2750,12 @@ a:hover {
 }
 
 .tabela-grid {
-  min-width: 1160px;
+  min-width: 1280px;
 }
 
 .tabela-colunas {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1.7fr 0.7fr 1fr 0.9fr 0.8fr 0.8fr 0.9fr 1fr 1fr 1.5fr;
+  grid-template-columns: 1.5fr 1fr 1.7fr 1fr 0.7fr 1fr 0.9fr 0.8fr 0.8fr 0.9fr 1fr 1fr 1.5fr;
   gap: 10px;
   padding: 14px 18px;
   align-items: center;

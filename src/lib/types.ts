@@ -8,6 +8,7 @@ export type Inscricao = {
   cpf: string;
   email: string;
   telefone: string;
+  cidade: string | null;
   data_nascimento: string;
   sexo: string;
   tamanho_camiseta: string;
@@ -40,6 +41,7 @@ export type NovaInscricaoPayload = {
   cpf: string;
   email: string;
   telefone: string;
+  cidade: string;
   dataNascimento: string;
   sexo: string;
   tamanhoCamiseta: string;
