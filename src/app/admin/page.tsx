@@ -21,6 +21,7 @@ type Inscricao = {
   valor: number;
   cupom_codigo: string | null;
   desconto: number;
+  lote: string | null;
   status_pagamento: StatusPagamento;
   kit_retirado_em: string | null;
   termo_aceito_em: string | null;
@@ -505,6 +506,9 @@ export default function AdminPage() {
                     </div>
                     <div className="celula-valor">
                       {formatarPreco(inscricao.valor)}
+                      {inscricao.lote && (
+                        <span className="celula-lote">{inscricao.lote}</span>
+                      )}
                       {inscricao.cupom_codigo && (
                         <span className="celula-cupom">
                           {inscricao.cupom_codigo} −

@@ -60,6 +60,12 @@ const migrar = (database: DatabaseSync) => {
       "ALTER TABLE inscricoes ADD COLUMN desconto REAL NOT NULL DEFAULT 0",
     );
   }
+  // O lote so passou a ser gravado a partir do 2o lote: tudo que ja
+  // estava no banco foi vendido no 1o.
+  if (!nomes.has("lote")) {
+    database.exec("ALTER TABLE inscricoes ADD COLUMN lote TEXT");
+    database.exec("UPDATE inscricoes SET lote = '1º lote' WHERE lote IS NULL");
+  }
   for (const coluna of [
     "termo_aceito_em",
     "termo_versao",

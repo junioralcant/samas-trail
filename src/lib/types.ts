@@ -19,6 +19,7 @@ export type Inscricao = {
   mp_payment_id: string | null;
   cupom_codigo: string | null;
   desconto: number;
+  lote: string | null;
   kit_token: string | null;
   kit_retirado_em: string | null;
   termo_aceito_em: string | null;

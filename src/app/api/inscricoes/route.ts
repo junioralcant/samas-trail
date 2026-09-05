@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { DISTANCIAS, getAppUrl, getEventName, getPreco } from "@/lib/config";
+import {
+  DISTANCIAS,
+  getAppUrl,
+  getEventName,
+  getLoteAtual,
+  getPreco,
+} from "@/lib/config";
 import { limparCpf, validarCpf } from "@/lib/cpf";
 import { aplicarCupom } from "@/lib/cupom";
 import { gerarKitToken, getDb } from "@/lib/db";
@@ -117,6 +123,7 @@ export async function POST(request: Request) {
     desconto = cupom.desconto;
   }
   const valor = valorBase - desconto;
+  const lote = getLoteAtual();
 
   let inscricaoId: number;
 
@@ -127,7 +134,7 @@ export async function POST(request: Request) {
       `UPDATE inscricoes SET
         nome = ?, email = ?, telefone = ?, data_nascimento = ?, sexo = ?,
         tamanho_camiseta = ?, equipe = ?, distancia = ?, valor = ?,
-        cupom_codigo = ?, desconto = ?,
+        cupom_codigo = ?, desconto = ?, lote = ?,
         termo_aceito_em = datetime('now', 'localtime'), termo_versao = ?,
         termo_ip = ?, termo_user_agent = ?
        WHERE id = ?`,
@@ -143,6 +150,7 @@ export async function POST(request: Request) {
       valor,
       cupomCodigo,
       desconto,
+      lote,
       TERMO_VERSAO,
       termoIp,
       termoUserAgent,
@@ -153,9 +161,9 @@ export async function POST(request: Request) {
     const resultado = db
       .prepare(
         `INSERT INTO inscricoes
-          (nome, cpf, email, telefone, data_nascimento, sexo, tamanho_camiseta, equipe, distancia, valor, cupom_codigo, desconto, kit_token,
+          (nome, cpf, email, telefone, data_nascimento, sexo, tamanho_camiseta, equipe, distancia, valor, cupom_codigo, desconto, lote, kit_token,
            termo_aceito_em, termo_versao, termo_ip, termo_user_agent)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?)`,
       )
       .run(
         payload.nome.trim(),
@@ -170,6 +178,7 @@ export async function POST(request: Request) {
         valor,
         cupomCodigo,
         desconto,
+        lote,
         gerarKitToken(),
         TERMO_VERSAO,
         termoIp,
