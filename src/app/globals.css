@@ -2750,12 +2750,12 @@ a:hover {
 }
 
 .tabela-grid {
-  min-width: 1080px;
+  min-width: 1160px;
 }
 
 .tabela-colunas {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1.7fr 0.7fr 1fr 0.9fr 0.8fr 0.9fr 1fr 1fr 1.5fr;
+  grid-template-columns: 1.5fr 1fr 1.7fr 0.7fr 1fr 0.9fr 0.8fr 0.8fr 0.9fr 1fr 1fr 1.5fr;
   gap: 10px;
   padding: 14px 18px;
   align-items: center;
@@ -2905,14 +2905,6 @@ a:hover {
   padding: 14px 18px;
   background: var(--painel-login);
   font-size: 12px;
-  color: var(--cinza-escuro);
-}
-
-.celula-lote {
-  display: block;
-  font-size: 10.5px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--cinza-escuro);
 }
 

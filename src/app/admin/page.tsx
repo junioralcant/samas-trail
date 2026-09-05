@@ -405,6 +405,7 @@ export default function AdminPage() {
                 <div>Camiseta</div>
                 <div>Equipe</div>
                 <div>Distância</div>
+                <div>Lote</div>
                 <div>Valor</div>
                 <div>Status</div>
                 <div>Kit</div>
@@ -504,11 +505,11 @@ export default function AdminPage() {
                         <option value="18km">18km</option>
                       </select>
                     </div>
+                    <div className="celula-secundaria">
+                      {inscricao.lote ?? "—"}
+                    </div>
                     <div className="celula-valor">
                       {formatarPreco(inscricao.valor)}
-                      {inscricao.lote && (
-                        <span className="celula-lote">{inscricao.lote}</span>
-                      )}
                       {inscricao.cupom_codigo && (
                         <span className="celula-cupom">
                           {inscricao.cupom_codigo} −
