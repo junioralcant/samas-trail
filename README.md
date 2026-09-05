@@ -4,7 +4,7 @@ Aplicação de inscrições para evento de corrida de trilha com duas distância
 
 ## Stack
 
-- Next.js 15 (App Router) + React 19 + TypeScript
+- Next.js 16 (App Router) + React 19 + TypeScript
 - SQLite via `node:sqlite` (requer Node 22.5+; sem dependência nativa)
 - Mercado Pago SDK v2 (Checkout Pro + webhook de notificação)
 
@@ -26,7 +26,7 @@ npm run dev
 | `EVENT_NAME` / `NEXT_PUBLIC_EVENT_NAME`                 | Nome do evento                                                       |
 | `NEXT_PUBLIC_EVENT_DATE` / `NEXT_PUBLIC_EVENT_LOCATION` | Data e local exibidos na página                                      |
 | `PRECO_8KM` / `PRECO_18KM` (+ versões `NEXT_PUBLIC_`)   | Valores das inscrições                                               |
-| `NEXT_PUBLIC_LOTE_ATUAL`                                | Lote exibido na página (default `1º lote`)                           |
+| `NEXT_PUBLIC_LOTE_ATUAL`                                | Lote exibido na página e gravado na inscrição (default `1º lote`)    |
 | `MP_ACCESS_TOKEN`                                       | Access token do Mercado Pago (use o de TESTE em dev)                 |
 | `APP_URL`                                               | URL pública do app (back_urls e webhook do MP)                       |
 | `ADMIN_PASSWORD`                                        | Senha do painel `/admin`                                             |
@@ -50,6 +50,30 @@ Atletas com menos de 18 anos aceitam pelo site, mas o painel, o leitor de QR,
 o e-mail e a pagina do kit avisam que a via impressa assinada pelo responsavel
 legal e obrigatoria na retirada. A idade e sempre calculada na hora, nunca
 gravada.
+
+## Testes
+
+```bash
+npm test              # roda a suite
+npm run test:cobertura  # roda com cobertura e exige 100%
+npm run typecheck     # tsc --noEmit (inclui os testes)
+```
+
+Runner nativo do Node (`node --test`), sem dependencia nova. O que a suite
+cobre — 100% de linhas, ramos e funcoes:
+
+- `src/lib/**` — CPF, idade, cupom, config, banco/migracoes, sessao do admin,
+  e-mail (Resend) e status de pagamento;
+- `src/app/api/**` — todas as rotas, chamadas direto como funcao com um
+  `Request` montado na mao.
+
+Componentes React (`.tsx`) ficam de fora: o `node --test` roda TypeScript
+nativamente, mas nao JSX.
+
+`test/setup.mjs` (carregado com `--import`) resolve o alias `@/`, troca
+`next/headers` e `mercadopago` por stubs de `test/stubs/` e aponta o
+`DATABASE_PATH` para um SQLite temporario — cada arquivo de teste roda em seu
+proprio processo, com banco proprio, e nenhum teste sai para a rede.
 
 ## Fluxo de pagamento
 

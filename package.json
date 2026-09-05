@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./test/setup.mjs --test 'test/**/*.test.ts'",
+    "test:cobertura": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./test/setup.mjs --test --experimental-test-coverage --test-coverage-include='src/lib/**' --test-coverage-include='src/app/api/**' --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 'test/**/*.test.ts'",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "jsqr": "^1.4.0",
