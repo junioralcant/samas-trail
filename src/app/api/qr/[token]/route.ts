@@ -11,14 +11,22 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ erro: "QR code inválido" }, { status: 400 });
   }
 
-  const existe = getDb()
+  const db = getDb();
+  const inscricao = db
     .prepare("SELECT id FROM inscricoes WHERE kit_token = ?")
     .get(token);
-  if (!existe) {
+  // O mesmo endereço serve os dois tipos de token: o do kit do atleta e o
+  // do pedido de quem comprou camisa sem se inscrever.
+  const pedido = inscricao
+    ? undefined
+    : db.prepare("SELECT id FROM pedidos_camisa WHERE token = ?").get(token);
+
+  if (!inscricao && !pedido) {
     return NextResponse.json({ erro: "QR code inválido" }, { status: 404 });
   }
 
-  const png = await QRCode.toBuffer(`${getAppUrl()}/inscricao/${token}`, {
+  const destino = inscricao ? "inscricao" : "camisa";
+  const png = await QRCode.toBuffer(`${getAppUrl()}/${destino}/${token}`, {
     type: "png",
     width: 480,
     margin: 2,

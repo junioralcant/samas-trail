@@ -36,7 +36,79 @@ const SCHEMA = `
     ativo INTEGER NOT NULL DEFAULT 1,
     criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
   );
+
+  -- Camisa extra: peca vendida a parte, com estoque proprio e finito.
+  -- 'avulso' paga sozinha (external_reference "camisa-<id>"); 'inscricao'
+  -- entra na preferencia da inscricao e espelha o status dela.
+  CREATE TABLE IF NOT EXISTS pedidos_camisa (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    inscricao_id INTEGER REFERENCES inscricoes (id) ON DELETE SET NULL,
+    nome TEXT NOT NULL,
+    cpf TEXT NOT NULL,
+    email TEXT NOT NULL,
+    telefone TEXT NOT NULL,
+    origem TEXT NOT NULL CHECK (origem IN ('avulso', 'inscricao')),
+    quantidade INTEGER NOT NULL CHECK (quantidade > 0),
+    valor_unitario REAL NOT NULL,
+    valor REAL NOT NULL,
+    promocional INTEGER NOT NULL DEFAULT 0,
+    status_pagamento TEXT NOT NULL DEFAULT 'pendente'
+      CHECK (status_pagamento IN ('pendente', 'pago', 'cancelado')),
+    mp_preference_id TEXT,
+    mp_payment_id TEXT,
+    token TEXT,
+    -- Enquanto nao vence, um pedido pendente segura o estoque. Vencida,
+    -- a peca volta a ficar disponivel sozinha, sem cron nem faxina.
+    reservado_ate TEXT,
+    -- Pagamento aprovado depois da reserva vencer, sem peca sobrando.
+    estoque_estourado INTEGER NOT NULL DEFAULT 0,
+    retirado_em TEXT,
+    criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_pedidos_camisa_token
+    ON pedidos_camisa (token);
+  CREATE INDEX IF NOT EXISTS idx_pedidos_camisa_cpf ON pedidos_camisa (cpf);
+  CREATE INDEX IF NOT EXISTS idx_pedidos_camisa_inscricao
+    ON pedidos_camisa (inscricao_id);
+  CREATE INDEX IF NOT EXISTS idx_pedidos_camisa_status
+    ON pedidos_camisa (status_pagamento);
+
+  CREATE TABLE IF NOT EXISTS itens_camisa (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pedido_id INTEGER NOT NULL
+      REFERENCES pedidos_camisa (id) ON DELETE CASCADE,
+    tamanho TEXT NOT NULL,
+    quantidade INTEGER NOT NULL CHECK (quantidade > 0),
+    UNIQUE (pedido_id, tamanho)
+  );
+  CREATE INDEX IF NOT EXISTS idx_itens_camisa_tamanho
+    ON itens_camisa (tamanho);
+
+  -- 'total' e quantas pecas existem de fato. O disponivel nunca e gravado:
+  -- sai sempre da conta com os pedidos, para nao existir contador para
+  -- decrementar duas vezes nem esquecer de decrementar.
+  CREATE TABLE IF NOT EXISTS estoque_camisa (
+    tamanho TEXT PRIMARY KEY,
+    total INTEGER NOT NULL CHECK (total >= 0),
+    atualizado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS configuracoes (
+    chave TEXT PRIMARY KEY,
+    valor TEXT NOT NULL,
+    atualizado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+  );
 `;
+
+// Sobra da producao, sem reposicao. So entra quando a tabela esta vazia:
+// depois disso quem manda e o painel.
+const ESTOQUE_INICIAL: [string, number][] = [
+  ["P", 0],
+  ["M", 33],
+  ["G", 16],
+  ["GG", 4],
+  ["XG", 1],
+];
 
 export const gerarKitToken = () => randomBytes(16).toString("hex");
 
@@ -94,6 +166,35 @@ const migrar = (database: DatabaseSync) => {
   for (const linha of semToken) {
     atualizar.run(gerarKitToken(), linha.id);
   }
+
+  const estoque = database
+    .prepare("SELECT COUNT(*) AS total FROM estoque_camisa")
+    .get() as unknown as { total: number };
+  if (estoque.total === 0) {
+    const inserir = database.prepare(
+      "INSERT INTO estoque_camisa (tamanho, total) VALUES (?, ?)",
+    );
+    for (const [tamanho, quantidade] of ESTOQUE_INICIAL) {
+      inserir.run(tamanho, quantidade);
+    }
+  }
+};
+
+/**
+ * BEGIN IMMEDIATE pega o lock de escrita antes da leitura: sem isso, duas
+ * compras simultaneas leem "1 XG disponivel" e as duas passam.
+ */
+export const emTransacao = <T>(acao: () => T): T => {
+  const database = getDb();
+  database.exec("BEGIN IMMEDIATE");
+  try {
+    const resultado = acao();
+    database.exec("COMMIT");
+    return resultado;
+  } catch (erro) {
+    database.exec("ROLLBACK");
+    throw erro;
+  }
 };
 
 export const getDb = (): DatabaseSync => {
@@ -106,6 +207,9 @@ export const getDb = (): DatabaseSync => {
   mkdirSync(dirname(path), { recursive: true });
   db = new DatabaseSync(path);
   db.exec("PRAGMA journal_mode = WAL;");
+  // Precisa estar ligado para o ON DELETE das camisas valer: excluir uma
+  // inscricao solta o vinculo do pedido em vez de apagar camisa ja paga.
+  db.exec("PRAGMA foreign_keys = ON;");
   db.exec(SCHEMA);
   migrar(db);
   return db;

@@ -3812,3 +3812,897 @@ a:hover {
     text-align: left;
   }
 }
+
+/* ============================================================
+   Camisa extra — seletor, selo, galeria, /camisa
+   Peca vendida a parte da inscricao, com estoque finito.
+   ============================================================ */
+
+.seletor-camisas {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.seletor-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.seletor-rotulo {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--cinza);
+}
+
+/* O contador aparece desde "0 de 5": o limite e dito antes de a pessoa
+   bater nele. */
+.seletor-contador {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--cinza-escuro);
+}
+
+.seletor-contador.com-selecao {
+  color: var(--texto);
+}
+
+.seletor-contador.no-limite {
+  color: var(--ambar-badge);
+}
+
+.seletor-linhas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.seletor-linha {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 56px;
+  padding: 0 8px 0 14px;
+  justify-content: center;
+  background: var(--input-bg);
+  border: 1px solid var(--input-borda);
+  border-radius: 12px;
+}
+
+/* Linha com nota de estoque cresce; sem altura fixa o texto vazaria. */
+.seletor-linha.com-nota {
+  height: auto;
+  padding: 10px 8px 10px 14px;
+}
+
+/* Marca a selecao sem repintar o fundo da linha. */
+.seletor-linha.escolhida {
+  border-color: rgba(225, 6, 0, 0.45);
+}
+
+.seletor-linha.esgotada {
+  background: #121212;
+  border-color: #202020;
+}
+
+.seletor-linha-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.seletor-tamanho-bloco {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.seletor-tamanho {
+  width: 26px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--branco);
+}
+
+.seletor-linha.esgotada .seletor-tamanho {
+  color: var(--cinza-escuro);
+}
+
+.seletor-esgotado {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #1a1a1a;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cinza-escuro);
+}
+
+.seletor-controles {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 44x44: alvo de toque de uma mao so, sem sobreposicao. */
+.seletor-botao {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #1e1e1e;
+  border: 1px solid var(--input-borda);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--texto);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.seletor-botao:hover:not(:disabled) {
+  border-color: var(--vermelho);
+  color: var(--branco);
+}
+
+.seletor-botao:focus-visible {
+  outline: 2px solid var(--vermelho);
+  outline-offset: 2px;
+}
+
+.seletor-botao:disabled {
+  background: #141414;
+  border-color: #232323;
+  color: #3a3a3a;
+  cursor: not-allowed;
+}
+
+/* min-width fixo para o campo nao pular quando vai de 9 para 10. */
+.seletor-numero {
+  min-width: 40px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--branco);
+}
+
+.seletor-linha.esgotada .seletor-numero {
+  color: #3a3a3a;
+}
+
+/* Travado por estoque: a nota entra DENTRO da linha. Posicao diferente da
+   nota de limite = razao diferente, sem depender de cor. */
+.seletor-nota-linha {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--cinza-escuro);
+}
+
+.seletor-nota {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--cinza-escuro);
+}
+
+/* Travado pelo limite do carrinho: nota no rodape do bloco inteiro. */
+.seletor-nota-limite {
+  padding: 10px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-borda);
+  border-left: 3px solid var(--ambar-badge);
+  border-radius: 8px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  font-weight: 500;
+  color: var(--texto);
+}
+
+/* --- Selo de promocao ---------------------------------------------- */
+
+.selo-preco {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  align-self: flex-start;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--vermelho);
+  color: var(--branco);
+}
+
+/* Sem promocao: placa neutra do mesmo tamanho, sem riscado e sem buraco. */
+.selo-preco.sem-promocao {
+  background: var(--painel-claro);
+  border: 1px solid var(--borda-media);
+}
+
+.selo-preco-de {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  text-decoration: line-through;
+}
+
+.selo-preco-valor {
+  font-family: var(--font-anton), Anton, sans-serif;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: 0.03em;
+}
+
+.selo-preco-medio .selo-preco-valor {
+  font-size: 22px;
+}
+
+.selo-preco-medio {
+  padding: 8px 13px;
+}
+
+/* --- Galeria frente/costas ------------------------------------------ */
+
+.camisa-faces {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.camisa-face {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 0 12px;
+  background: var(--painel-claro);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s ease;
+}
+
+.camisa-face:hover {
+  border-color: var(--vermelho);
+}
+
+.camisa-face:focus-visible {
+  outline: 2px solid var(--vermelho);
+  outline-offset: 2px;
+}
+
+/* A peca e azul-royal sobre um site preto e vermelho: a placa escura
+   acomoda a foto sem recolorir nada. */
+.camisa-face-foto {
+  display: block;
+  background: #0d0d0d;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+}
+
+.camisa-face-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.camisa-face-nome {
+  padding: 10px 12px 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--branco);
+}
+
+.camisa-face-descricao {
+  padding: 0 12px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--cinza);
+}
+
+.camisa-faces-dica {
+  font-size: 11.5px;
+  color: var(--cinza-escuro);
+  margin-top: 10px;
+}
+
+.camisa-extra-foto {
+  object-fit: contain;
+}
+
+/* --- Pagina /camisa -------------------------------------------------- */
+
+.pagina-camisa {
+  min-height: 100vh;
+  background: var(--preto);
+}
+
+.camisa-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--borda-suave);
+}
+
+.camisa-marca {
+  color: inherit;
+}
+
+.camisa-topo-data {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cinza-escuro);
+}
+
+.camisa-conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.camisa-vitrine {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.camisa-titulo-linha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.camisa-titulo {
+  margin: 0;
+  font-size: 40px;
+  letter-spacing: 0.04em;
+  transform: skewX(-6deg);
+  color: var(--branco);
+}
+
+.camisa-separacao {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--cinza);
+  max-width: 560px;
+}
+
+.pill-esgotado {
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #1a1a1a;
+  border: 1px solid var(--borda-media);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cinza);
+}
+
+.camisa-form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.camisa-dados {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.camisa-subtitulo {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--vermelho);
+}
+
+/* Altura reservada desde o inicio: o resultado assincrono troca o
+   conteudo sem empurrar o que esta abaixo. */
+.aviso-vinculo-area {
+  min-height: 58px;
+}
+
+.aviso-vinculo {
+  padding: 11px 13px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  background: var(--input-bg);
+  border: 1px solid var(--input-borda);
+  color: var(--cinza);
+}
+
+.aviso-vinculo-titulo {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--verde-badge);
+  margin-bottom: 5px;
+}
+
+.aviso-vinculo.vinculada {
+  border-left: 3px solid var(--verde-badge);
+  color: var(--texto);
+}
+
+/* Nao ter inscricao e o caso normal de quem compra para outra pessoa:
+   cinza neutro, nunca vermelho nem palavra de erro. */
+.aviso-vinculo.neutro {
+  color: var(--cinza);
+}
+
+.camisa-resumo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.camisa-resumo-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--texto);
+}
+
+.camisa-resumo-linha.secundaria {
+  font-size: 12px;
+  color: var(--cinza);
+}
+
+.camisa-esgotada {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 26px 22px;
+  background: var(--painel);
+  border: 1px solid var(--borda-media);
+  border-radius: 16px;
+}
+
+.camisa-esgotada-titulo {
+  font-size: 24px;
+  letter-spacing: 0.04em;
+  transform: skewX(-6deg);
+  color: var(--branco);
+}
+
+.camisa-esgotada-texto {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--cinza);
+  max-width: 560px;
+}
+
+@media (min-width: 1024px) {
+  .camisa-conteudo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+    gap: 48px;
+    padding-top: 48px;
+  }
+
+  .camisa-titulo {
+    font-size: 54px;
+  }
+
+  .camisa-vitrine {
+    position: sticky;
+    top: 32px;
+  }
+}
+
+/* --- Faixa da camisa extra na home ---------------------------------- */
+
+.secao-camisa-extra {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 44px 24px;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.camisa-extra-cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Etiqueta oposta a do kit: o kit usa badge vermelho "Incluso" sobre a
+   foto; a extra usa pill ambar no titulo. Cor e posicao diferentes. */
+.pill-a-venda {
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-borda);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ambar-badge);
+}
+
+.camisa-extra-separacao {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--cinza);
+  max-width: 620px;
+}
+
+.camisa-extra-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.camisa-extra-galeria {
+  max-width: 520px;
+}
+
+.camisa-extra-acao {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.camisa-extra-cta {
+  display: inline-block;
+  width: auto;
+  padding: 17px 30px 15px;
+  color: var(--branco);
+  text-align: center;
+}
+
+.camisa-extra-cta:hover {
+  background: var(--vermelho-hover);
+  color: var(--branco);
+}
+
+.camisa-extra-nota {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--cinza-escuro);
+  max-width: 320px;
+}
+
+.camisa-extra-esgotada {
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-borda);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cinza);
+}
+
+@media (min-width: 1024px) {
+  .camisa-extra-corpo {
+    flex-direction: row;
+    align-items: center;
+    gap: 48px;
+  }
+
+  .camisa-extra-galeria {
+    flex: 1;
+  }
+
+  .camisa-extra-acao {
+    flex: 0 0 320px;
+  }
+}
+
+/* --- Bloco "adicionar camisa extra" dentro do formulario ------------ */
+
+.bloco-camisa-extra {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  background: var(--painel);
+  border: 1px solid var(--borda-media);
+  border-radius: 16px;
+}
+
+.bloco-camisa-topo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bloco-camisa-mini {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #0d0d0d;
+}
+
+.bloco-camisa-texto {
+  flex: 1;
+  min-width: 160px;
+}
+
+.bloco-camisa-nome {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--branco);
+}
+
+.bloco-camisa-separacao {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--cinza);
+  margin-top: 3px;
+}
+
+.bloco-camisa-esgotado {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-borda);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--cinza);
+}
+
+/* --- Total discriminado --------------------------------------------- */
+
+.resumo-total {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resumo-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--texto);
+}
+
+.resumo-linha-desconto {
+  color: var(--verde-badge);
+}
+
+.resumo-nota {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--cinza-escuro);
+}
+
+/* --- Pagina do pedido de camisa ------------------------------------- */
+
+.pedido-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pedido-sem-qr {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-borda);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cinza);
+}
+
+/* --- Painel: camisas extras ----------------------------------------- */
+
+.badge-alerta-camisa {
+  border-color: rgba(52, 211, 153, 0.4);
+  color: var(--verde-badge);
+}
+
+.pill-promo {
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-borda);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cinza);
+  white-space: nowrap;
+}
+
+.pill-promo.ativa {
+  color: var(--ambar-badge);
+}
+
+.estoque-bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--painel-claro);
+  border: 1px solid var(--borda-suave);
+  border-radius: 14px;
+}
+
+.estoque-cabecalho {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.estoque-titulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--branco);
+}
+
+.estoque-formula {
+  font-size: 11px;
+  color: var(--cinza-escuro);
+}
+
+.estoque-tabela {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.estoque-linha {
+  display: grid;
+  grid-template-columns: 60px 90px 1fr 1fr 1.2fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.estoque-cabecalho-linha {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cinza-escuro);
+}
+
+.estoque-tamanho {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--branco);
+}
+
+.estoque-input {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-borda);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--branco);
+  font-size: 13px;
+  outline: none;
+}
+
+.estoque-input:focus {
+  border-color: var(--vermelho);
+}
+
+.estoque-numero {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--texto);
+}
+
+.estoque-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--cinza-escuro);
+}
+
+.pedidos-titulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--branco);
+  margin-top: 4px;
+}
+
+.camisas-colunas {
+  display: grid;
+  grid-template-columns:
+    1.4fr 1fr 1.4fr 0.9fr 0.8fr 0.8fr 1.4fr 0.9fr 1.4fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.tabela-camisas {
+  min-width: 1180px;
+}
+
+/* Dinheiro capturado e camisa inexistente: a linha precisa saltar. */
+.linha-sem-peca {
+  background: rgba(225, 6, 0, 0.07);
+  box-shadow: inset 3px 0 0 var(--vermelho);
+}
+
+.celula-vinculo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.celula-vinculo-nome {
+  font-size: 12px;
+  color: var(--texto);
+}
+
+.celula-vinculo-nota {
+  font-size: 10.5px;
+  color: var(--cinza-escuro);
+}
+
+/* --- Leitor: distinguir kit de camisa antes de ler o texto ---------- */
+
+.leitor-tipo {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cinza-escuro);
+  margin-bottom: 6px;
+}
+
+.leitor-camisas {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--verde-badge);
+}
+
+.leitor-camisas-rotulo {
+  display: block;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin-bottom: 3px;
+}

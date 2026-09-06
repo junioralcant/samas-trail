@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { camisasPorInscricao } from "@/lib/adminCamisas";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { resumirItens } from "@/lib/estoque";
 import { calcularIdade, ehMenorDeIdade } from "@/lib/idade";
 import type { Inscricao } from "@/lib/types";
 
@@ -17,6 +19,8 @@ const CSV_HEADER = [
   "Equipe",
   "Distância",
   "Lote",
+  "Camisas extras",
+  "Tamanhos camisas",
   "Cupom",
   "Desconto",
   "Valor",
@@ -44,8 +48,11 @@ export async function GET() {
     .prepare("SELECT * FROM inscricoes ORDER BY distancia, nome")
     .all() as unknown as Inscricao[];
 
-  const linhas = inscricoes.map((i) =>
-    [
+  const camisas = camisasPorInscricao();
+
+  const linhas = inscricoes.map((i) => {
+    const itens = camisas[i.id] ?? [];
+    return [
       i.id,
       i.nome,
       i.cpf,
@@ -58,6 +65,8 @@ export async function GET() {
       i.equipe,
       i.distancia,
       i.lote,
+      itens.reduce((soma, item) => soma + item.quantidade, 0),
+      resumirItens(itens),
       i.cupom_codigo,
       i.desconto.toFixed(2).replace(".", ","),
       i.valor.toFixed(2).replace(".", ","),
@@ -71,8 +80,8 @@ export async function GET() {
       i.criado_em,
     ]
       .map(escapeCsv)
-      .join(";"),
-  );
+      .join(";");
+  });
 
   const csv = "﻿" + [CSV_HEADER.join(";"), ...linhas].join("\n");
 

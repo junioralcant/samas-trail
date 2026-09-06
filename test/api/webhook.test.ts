@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, it } from "node:test";
 import { POST } from "@/app/api/webhook/mercadopago/route";
 import {
   buscarInscricao,
+  buscarPedidoCamisa,
   inserirInscricao,
+  inserirPedidoCamisa,
   limparBanco,
   pedido,
   silenciarErros,
@@ -155,5 +157,58 @@ describe("POST /api/webhook/mercadopago", () => {
       console.registros[0][0],
       "Erro ao processar webhook Mercado Pago",
     );
+  });
+});
+
+describe("POST /api/webhook/mercadopago — camisa extra", () => {
+  it("confirma o pedido pela referencia com prefixo", async () => {
+    const item = inserirPedidoCamisa();
+    globalThis.__testeMp.paymentGet = async () => ({
+      id: 555,
+      status: "approved",
+      external_reference: `camisa-${item.id}`,
+    });
+
+    const resposta = await notificar({
+      corpo: { type: "payment", data: { id: 555 } },
+    });
+
+    assert.equal(resposta.status, 200);
+    const atualizado = buscarPedidoCamisa(item.id);
+    assert.equal(atualizado?.status_pagamento, "pago");
+    assert.equal(atualizado?.mp_payment_id, "555");
+  });
+
+  it("cancela o pedido quando o pagamento e recusado", async () => {
+    const item = inserirPedidoCamisa();
+    globalThis.__testeMp.paymentGet = async () => ({
+      id: 556,
+      status: "rejected",
+      external_reference: `camisa-${item.id}`,
+    });
+
+    await notificar({ corpo: { type: "payment", data: { id: 556 } } });
+
+    assert.equal(
+      buscarPedidoCamisa(item.id)?.status_pagamento,
+      "cancelado",
+    );
+  });
+
+  // Referencia desconhecida nao pode derrubar o webhook: o Mercado Pago
+  // reenviaria a notificacao para sempre.
+  it("ignora referencia que nao e de inscricao nem de camisa", async () => {
+    globalThis.__testeMp.paymentGet = async () => ({
+      id: 557,
+      status: "approved",
+      external_reference: "pedido-de-outra-loja",
+    });
+
+    const resposta = await notificar({
+      corpo: { type: "payment", data: { id: 557 } },
+    });
+
+    assert.equal(resposta.status, 200);
+    assert.deepEqual(await resposta.json(), { ok: true });
   });
 });

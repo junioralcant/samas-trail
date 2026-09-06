@@ -3,6 +3,7 @@ import { beforeEach, describe, it } from "node:test";
 import { GET } from "@/app/api/admin/export/route";
 import {
   inserirInscricao,
+  inserirPedidoCamisa,
   limparBanco,
   logarComoAdmin,
   marcarKitRetirado,
@@ -69,6 +70,8 @@ describe("GET /api/admin/export", () => {
       "Equipe",
       "Distância",
       "Lote",
+      "Camisas extras",
+      "Tamanhos camisas",
       "Cupom",
       "Desconto",
       "Valor",
@@ -103,12 +106,14 @@ describe("GET /api/admin/export", () => {
     assert.equal(linha[5], "Bacabal");
     assert.equal(linha[10], "18km");
     assert.equal(linha[11], "2º lote");
-    assert.equal(linha[12], "TRILHA10");
-    assert.equal(linha[13], "10,00");
-    assert.equal(linha[14], "150,00");
-    assert.equal(linha[15], "pago");
-    assert.equal(linha[16], "2026-11-22 07:15:00");
-    assert.equal(linha[18], "nao");
+    assert.equal(linha[12], "0", "camisas extras");
+    assert.equal(linha[13], "", "tamanhos das camisas");
+    assert.equal(linha[14], "TRILHA10");
+    assert.equal(linha[15], "10,00");
+    assert.equal(linha[16], "150,00");
+    assert.equal(linha[17], "pago");
+    assert.equal(linha[18], "2026-11-22 07:15:00");
+    assert.equal(linha[20], "nao");
   });
 
   it("marca quem e menor de idade e calcula a idade", async () => {
@@ -117,8 +122,8 @@ describe("GET /api/admin/export", () => {
     const { texto } = await baixarCsv();
     const linha = texto.split("\n")[1].split(";");
 
-    assert.equal(linha[17], "15");
-    assert.equal(linha[18], "sim");
+    assert.equal(linha[19], "15");
+    assert.equal(linha[20], "sim");
   });
 
   it("escapa ponto e virgula, aspas e quebra de linha", async () => {
@@ -143,8 +148,8 @@ describe("GET /api/admin/export", () => {
 
     assert.equal(linha[9], "", "equipe");
     assert.equal(linha[11], "", "lote");
-    assert.equal(linha[12], "", "cupom");
-    assert.equal(linha[19], "", "termo aceito em");
+    assert.equal(linha[14], "", "cupom");
+    assert.equal(linha[21], "", "termo aceito em");
   });
 
   it("ordena por distancia e nome", async () => {
@@ -159,5 +164,25 @@ describe("GET /api/admin/export", () => {
       .map((linha) => linha.split(";")[1]);
 
     assert.deepEqual(nomes, ["Bruno", "Ana", "Zeca"]);
+  });
+});
+
+describe("GET /api/admin/export — colunas de camisa extra", () => {
+  beforeEach(() => {
+    logarComoAdmin();
+  });
+
+  it("traz a quantidade e os tamanhos das camisas do atleta", async () => {
+    const inscricao = inserirInscricao();
+    inserirPedidoCamisa({ inscricao_id: inscricao.id, origem: "inscricao" }, [
+      { tamanho: "M", quantidade: 2 },
+      { tamanho: "G", quantidade: 1 },
+    ]);
+
+    const { texto } = await baixarCsv();
+    const linha = texto.split("\n")[1].split(";");
+
+    assert.equal(linha[12], "3");
+    assert.equal(linha[13], "2× M, 1× G");
   });
 });

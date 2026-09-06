@@ -16,10 +16,35 @@ type ResumoInscricao = {
   termo_aceito_em: string | null;
 };
 
+type ResumoPedidoCamisa = {
+  id: number;
+  nome: string;
+  quantidade: number;
+  resumo: string;
+  status_pagamento: string;
+  retirado_em: string | null;
+  inscricao_id: number | null;
+};
+
+type ItemCamisa = { tamanho: string; quantidade: number };
+
 type Resultado =
-  | { tipo: "confirmado"; inscricao: ResumoInscricao }
-  | { tipo: "ja-retirado"; inscricao: ResumoInscricao }
-  | { tipo: "erro"; mensagem: string; inscricao?: ResumoInscricao };
+  | {
+      tipo: "confirmado";
+      inscricao: ResumoInscricao;
+      camisasResumo?: string;
+      camisasExtras?: ItemCamisa[];
+    }
+  | {
+      tipo: "ja-retirado";
+      inscricao: ResumoInscricao;
+      camisasResumo?: string;
+      camisasExtras?: ItemCamisa[];
+    }
+  | { tipo: "erro"; mensagem: string; inscricao?: ResumoInscricao }
+  | { tipo: "camisa-confirmada"; pedido: ResumoPedidoCamisa }
+  | { tipo: "camisa-ja-retirada"; pedido: ResumoPedidoCamisa }
+  | { tipo: "camisa-erro"; mensagem: string; pedido?: ResumoPedidoCamisa };
 
 type LeitorKitProps = {
   onConfirmado: () => void;
@@ -56,19 +81,50 @@ export default function LeitorKit({ onConfirmado }: LeitorKitProps) {
           body: JSON.stringify({ token: texto }),
         });
         const data = await response.json();
+        // O mesmo leitor recebe os dois códigos: o kit do atleta e o do
+        // pedido de quem comprou camisa sem se inscrever.
+        const ehCamisa = data.tipo === "camisa";
         if (!response.ok) {
+          setResultado(
+            ehCamisa
+              ? {
+                  tipo: "camisa-erro",
+                  mensagem: data.erro ?? "Erro ao confirmar entrega",
+                  pedido: data.pedido,
+                }
+              : {
+                  tipo: "erro",
+                  mensagem: data.erro ?? "Erro ao confirmar retirada",
+                  inscricao: data.inscricao,
+                },
+          );
+          return;
+        }
+        if (ehCamisa) {
           setResultado({
-            tipo: "erro",
-            mensagem: data.erro ?? "Erro ao confirmar retirada",
-            inscricao: data.inscricao,
+            tipo: data.jaRetirado ? "camisa-ja-retirada" : "camisa-confirmada",
+            pedido: data.pedido,
           });
+          if (!data.jaRetirado) {
+            onConfirmado();
+          }
           return;
         }
         if (data.jaRetirado) {
-          setResultado({ tipo: "ja-retirado", inscricao: data.inscricao });
+          setResultado({
+            tipo: "ja-retirado",
+            inscricao: data.inscricao,
+            camisasResumo: data.camisasResumo,
+            camisasExtras: data.camisasExtras,
+          });
           return;
         }
-        setResultado({ tipo: "confirmado", inscricao: data.inscricao });
+        setResultado({
+          tipo: "confirmado",
+          inscricao: data.inscricao,
+          camisasResumo: data.camisasResumo,
+          camisasExtras: data.camisasExtras,
+        });
         onConfirmado();
       } catch {
         setResultado({ tipo: "erro", mensagem: "Erro de conexão" });
@@ -177,19 +233,63 @@ export default function LeitorKit({ onConfirmado }: LeitorKitProps) {
         ) : resultado ? (
           <div
             className={`leitor-resultado ${
-              resultado.tipo === "confirmado"
+              resultado.tipo === "confirmado" ||
+              resultado.tipo === "camisa-confirmada"
                 ? "leitor-sucesso"
-                : resultado.tipo === "ja-retirado"
+                : resultado.tipo === "ja-retirado" ||
+                    resultado.tipo === "camisa-ja-retirada"
                   ? "leitor-alerta"
                   : "leitor-erro"
             }`}
           >
+            {/* O tipo do código precisa ser identificável antes de ler o
+                texto: o operador está no sol, com fila na frente. */}
+            <div className="leitor-tipo">
+              {resultado.tipo.startsWith("camisa")
+                ? "Código de camisa"
+                : "Código de kit"}
+            </div>
             <div className="leitor-resultado-titulo">
               {resultado.tipo === "confirmado" && "✔ Kit liberado!"}
               {resultado.tipo === "ja-retirado" &&
                 `⚠ Kit já retirado em ${resultado.inscricao.kit_retirado_em}`}
               {resultado.tipo === "erro" && `✕ ${resultado.mensagem}`}
+              {resultado.tipo === "camisa-confirmada" && "✔ Camisa entregue!"}
+              {resultado.tipo === "camisa-ja-retirada" &&
+                `⚠ Camisa já entregue em ${resultado.pedido.retirado_em}`}
+              {resultado.tipo === "camisa-erro" && `✕ ${resultado.mensagem}`}
             </div>
+
+            {"pedido" in resultado && resultado.pedido && (
+              <div className="leitor-atleta">
+                <div className="leitor-atleta-nome">
+                  #C-{resultado.pedido.id} — {resultado.pedido.nome}
+                </div>
+                <div className="leitor-atleta-info">
+                  Camisa avulsa · {resultado.pedido.resumo}
+                </div>
+                {resultado.pedido.inscricao_id && (
+                  <div className="leitor-atleta-alerta">
+                    ⚠ Este comprador tem a inscrição #
+                    {resultado.pedido.inscricao_id} — a camisa normalmente sai
+                    junto com o kit. Confira se o kit já foi entregue.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {"camisasResumo" in resultado && resultado.camisasResumo && (
+              // Entrega única: o operador não pode esquecer as camisas.
+              <div className="leitor-camisas">
+                <span className="leitor-camisas-rotulo">Entrega junto</span>+
+                {resultado.camisasExtras?.reduce(
+                  (s, c) => s + c.quantidade,
+                  0,
+                )}{" "}
+                camisas extras: {resultado.camisasResumo}
+              </div>
+            )}
+
             {"inscricao" in resultado && resultado.inscricao && (
               <div className="leitor-atleta">
                 <div className="leitor-atleta-nome">

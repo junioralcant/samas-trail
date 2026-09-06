@@ -6,10 +6,19 @@ import {
   getLoteAtual,
   getPreco,
 } from "@/lib/config";
+import { getPrecoCamisa } from "@/lib/configuracoes";
 import { limparCpf, validarCpf } from "@/lib/cpf";
 import { aplicarCupom } from "@/lib/cupom";
-import { gerarKitToken, getDb } from "@/lib/db";
+import { emTransacao, gerarKitToken, getDb } from "@/lib/db";
+import { verificarDisponibilidade, type FaltaEstoque } from "@/lib/estoque";
 import { getPreferenceClient } from "@/lib/mercadopago";
+import {
+  apagarPedidoCamisa,
+  criarPedidoCamisa,
+  itensPreferencia,
+  respostaFalta,
+  validarItens,
+} from "@/lib/pedidoCamisa";
 import { TERMO_VERSAO } from "@/lib/termo";
 import {
   buscarPagamentoAprovadoMp,
@@ -28,6 +37,8 @@ const CAMPOS_OBRIGATORIOS: (keyof NovaInscricaoPayload)[] = [
   "tamanhoCamiseta",
   "distancia",
 ];
+
+type Gravado = { inscricaoId: number; pedidoId: number | null };
 
 export async function POST(request: Request) {
   let payload: NovaInscricaoPayload;
@@ -66,6 +77,11 @@ export async function POST(request: Request) {
       { erro: "É necessário aceitar o Termo de Responsabilidade" },
       { status: 400 },
     );
+  }
+
+  const camisas = validarItens(payload.camisasExtras);
+  if ("erro" in camisas) {
+    return NextResponse.json({ erro: camisas.erro }, { status: 400 });
   }
 
   const termoIp =
@@ -123,55 +139,40 @@ export async function POST(request: Request) {
     cupomCodigo = cupom.codigo;
     desconto = cupom.desconto;
   }
+  // O valor da inscrição não inclui as camisas: elas têm valor próprio no
+  // pedido, e o cupom vale só para a inscrição.
   const valor = valorBase - desconto;
   const lote = getLoteAtual();
+  const nome = payload.nome.trim();
+  const email = payload.email.trim().toLowerCase();
+  const telefone = payload.telefone.trim();
+  const precoCamisa = getPrecoCamisa();
 
-  let inscricaoId: number;
+  const gravar = (): Gravado | { faltas: FaltaEstoque[] } => {
+    // Confere o estoque antes de tocar na inscrição: faltando peça, nada é
+    // gravado e o atleta volta com tudo intacto para ajustar a escolha.
+    const faltas = verificarDisponibilidade(camisas.itens);
+    if (faltas.length > 0) {
+      return { faltas };
+    }
 
-  if (existente) {
-    // Reaproveita a inscrição pendente abandonada: atualiza os dados e
-    // gera um novo checkout, mantendo o mesmo id (external_reference).
-    db.prepare(
-      `UPDATE inscricoes SET
-        nome = ?, email = ?, telefone = ?, cidade = ?, data_nascimento = ?, sexo = ?,
-        tamanho_camiseta = ?, equipe = ?, distancia = ?, valor = ?,
-        cupom_codigo = ?, desconto = ?, lote = ?,
-        termo_aceito_em = datetime('now', 'localtime'), termo_versao = ?,
-        termo_ip = ?, termo_user_agent = ?
-       WHERE id = ?`,
-    ).run(
-      payload.nome.trim(),
-      payload.email.trim().toLowerCase(),
-      payload.telefone.trim(),
-      payload.cidade.trim(),
-      payload.dataNascimento,
-      payload.sexo,
-      payload.tamanhoCamiseta,
-      payload.equipe?.trim() || null,
-      payload.distancia,
-      valor,
-      cupomCodigo,
-      desconto,
-      lote,
-      TERMO_VERSAO,
-      termoIp,
-      termoUserAgent,
-      existente.id,
-    );
-    inscricaoId = existente.id;
-  } else {
-    const resultado = db
-      .prepare(
-        `INSERT INTO inscricoes
-          (nome, cpf, email, telefone, cidade, data_nascimento, sexo, tamanho_camiseta, equipe, distancia, valor, cupom_codigo, desconto, lote, kit_token,
-           termo_aceito_em, termo_versao, termo_ip, termo_user_agent)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?)`,
-      )
-      .run(
-        payload.nome.trim(),
-        cpf,
-        payload.email.trim().toLowerCase(),
-        payload.telefone.trim(),
+    let inscricaoId: number;
+
+    if (existente) {
+      // Reaproveita a inscrição pendente abandonada: atualiza os dados e
+      // gera um novo checkout, mantendo o mesmo id (external_reference).
+      db.prepare(
+        `UPDATE inscricoes SET
+          nome = ?, email = ?, telefone = ?, cidade = ?, data_nascimento = ?, sexo = ?,
+          tamanho_camiseta = ?, equipe = ?, distancia = ?, valor = ?,
+          cupom_codigo = ?, desconto = ?, lote = ?,
+          termo_aceito_em = datetime('now', 'localtime'), termo_versao = ?,
+          termo_ip = ?, termo_user_agent = ?
+         WHERE id = ?`,
+      ).run(
+        nome,
+        email,
+        telefone,
         payload.cidade.trim(),
         payload.dataNascimento,
         payload.sexo,
@@ -182,13 +183,76 @@ export async function POST(request: Request) {
         cupomCodigo,
         desconto,
         lote,
-        gerarKitToken(),
         TERMO_VERSAO,
         termoIp,
         termoUserAgent,
+        existente.id,
       );
-    inscricaoId = Number(resultado.lastInsertRowid);
+      inscricaoId = existente.id;
+      // A tentativa anterior pode ter reservado outros tamanhos: some com
+      // ela para devolver aquelas peças em vez de esperar a reserva vencer.
+      db.prepare(
+        `DELETE FROM pedidos_camisa
+          WHERE inscricao_id = ? AND origem = 'inscricao'
+            AND status_pagamento = 'pendente'`,
+      ).run(inscricaoId);
+    } else {
+      const resultado = db
+        .prepare(
+          `INSERT INTO inscricoes
+            (nome, cpf, email, telefone, cidade, data_nascimento, sexo, tamanho_camiseta, equipe, distancia, valor, cupom_codigo, desconto, lote, kit_token,
+             termo_aceito_em, termo_versao, termo_ip, termo_user_agent)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?)`,
+        )
+        .run(
+          nome,
+          cpf,
+          email,
+          telefone,
+          payload.cidade.trim(),
+          payload.dataNascimento,
+          payload.sexo,
+          payload.tamanhoCamiseta,
+          payload.equipe?.trim() || null,
+          payload.distancia,
+          valor,
+          cupomCodigo,
+          desconto,
+          lote,
+          gerarKitToken(),
+          TERMO_VERSAO,
+          termoIp,
+          termoUserAgent,
+        );
+      inscricaoId = Number(resultado.lastInsertRowid);
+    }
+
+    if (camisas.quantidade === 0) {
+      return { inscricaoId, pedidoId: null };
+    }
+
+    // Sem preferência própria: a camisa entra na do atleta e o status
+    // dela passa a acompanhar o da inscrição.
+    const pedido = criarPedidoCamisa({
+      inscricaoId,
+      nome,
+      cpf,
+      email,
+      telefone,
+      origem: "inscricao",
+      itens: camisas.itens,
+      preco: precoCamisa,
+    });
+
+    return { inscricaoId, pedidoId: pedido.pedidoId };
+  };
+
+  const gravado = emTransacao(gravar);
+  if ("faltas" in gravado) {
+    return NextResponse.json(respostaFalta(gravado.faltas), { status: 409 });
   }
+  const { inscricaoId, pedidoId } = gravado;
+
   const appUrl = getAppUrl();
   const isHttps = appUrl.startsWith("https://");
 
@@ -205,10 +269,11 @@ export async function POST(request: Request) {
             unit_price: valor,
             currency_id: "BRL",
           },
+          ...itensPreferencia(camisas.itens, precoCamisa.precoAtual),
         ],
         payer: {
-          name: payload.nome.trim(),
-          email: payload.email.trim().toLowerCase(),
+          name: nome,
+          email,
           identification: { type: "CPF", number: cpf },
         },
         external_reference: String(inscricaoId),
@@ -229,12 +294,22 @@ export async function POST(request: Request) {
       preference.id ?? null,
       inscricaoId,
     );
+    if (pedidoId !== null) {
+      db.prepare(
+        "UPDATE pedidos_camisa SET mp_preference_id = ? WHERE id = ?",
+      ).run(preference.id ?? null, pedidoId);
+    }
 
     return NextResponse.json({
       id: inscricaoId,
       initPoint: preference.init_point,
     });
   } catch (error) {
+    // Sem checkout não houve venda: apagar o pedido devolve as peças na
+    // hora, em vez de deixá-las presas até a reserva vencer.
+    if (pedidoId !== null) {
+      apagarPedidoCamisa(pedidoId);
+    }
     if (!existente) {
       db.prepare("DELETE FROM inscricoes WHERE id = ?").run(inscricaoId);
     }

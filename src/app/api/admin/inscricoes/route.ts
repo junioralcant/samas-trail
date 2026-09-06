@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { camisasPorInscricao, statsCamisas } from "@/lib/adminCamisas";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { resumirItens } from "@/lib/estoque";
 import type { Inscricao } from "@/lib/types";
 
 export async function GET(request: Request) {
@@ -33,9 +35,22 @@ export async function GET(request: Request) {
   const where = condicoes.length > 0 ? `WHERE ${condicoes.join(" AND ")}` : "";
   const db = getDb();
 
-  const inscricoes = db
+  const linhas = db
     .prepare(`SELECT * FROM inscricoes ${where} ORDER BY criado_em DESC`)
     .all(...params) as unknown as Inscricao[];
+
+  // Camisa vinculada muda a entrega do kit: quem confere na tenda precisa
+  // ver isso na mesma linha do atleta.
+  const camisas = camisasPorInscricao();
+  const inscricoes = linhas.map((inscricao) => {
+    const itens = camisas[inscricao.id] ?? [];
+    return {
+      ...inscricao,
+      camisas_extras: itens,
+      camisas_extras_total: itens.reduce((s, i) => s + i.quantidade, 0),
+      camisas_extras_resumo: resumirItens(itens),
+    };
+  });
 
   const stats = db
     .prepare(
@@ -55,7 +70,10 @@ export async function GET(request: Request) {
          COALESCE(SUM(CASE WHEN termo_aceito_em IS NULL THEN 1 ELSE 0 END), 0) AS semTermo
        FROM inscricoes`,
     )
-    .get();
+    .get() as Record<string, number>;
 
-  return NextResponse.json({ inscricoes, stats });
+  return NextResponse.json({
+    inscricoes,
+    stats: { ...stats, camisas: statsCamisas() },
+  });
 }

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { getPaymentClient } from "@/lib/mercadopago";
-import { MP_STATUS_PARA_LOCAL, registrarStatusPagamento } from "@/lib/pagamento";
+import {
+  MP_STATUS_PARA_LOCAL,
+  registrarStatusPagamento,
+  registrarStatusPagamentoCamisa,
+} from "@/lib/pagamento";
+import type { StatusPagamento } from "@/lib/types";
 
 const extrairPaymentId = async (request: Request): Promise<string | null> => {
   const url = new URL(request.url);
@@ -24,6 +29,25 @@ const extrairPaymentId = async (request: Request): Promise<string | null> => {
   return null;
 };
 
+/**
+ * Inscricao usa o id puro ("12") desde sempre — mudar quebraria as
+ * pendentes. Camisa avulsa nasceu com prefixo.
+ */
+const rotear = async (
+  referencia: string,
+  status: StatusPagamento,
+  paymentId: string,
+): Promise<void> => {
+  if (/^\d+$/.test(referencia)) {
+    await registrarStatusPagamento(Number(referencia), status, paymentId);
+    return;
+  }
+  const camisa = /^camisa-(\d+)$/.exec(referencia);
+  if (camisa) {
+    await registrarStatusPagamentoCamisa(Number(camisa[1]), status, paymentId);
+  }
+};
+
 export async function POST(request: Request) {
   const paymentId = await extrairPaymentId(request);
   if (!paymentId) {
@@ -32,13 +56,13 @@ export async function POST(request: Request) {
 
   try {
     const payment = await getPaymentClient().get({ id: paymentId });
-    const inscricaoId = payment.external_reference;
+    const referencia = payment.external_reference;
     const status = payment.status
       ? MP_STATUS_PARA_LOCAL[payment.status]
       : undefined;
 
-    if (inscricaoId && /^\d+$/.test(inscricaoId) && status) {
-      await registrarStatusPagamento(Number(inscricaoId), status, paymentId);
+    if (referencia && status) {
+      await rotear(referencia, status, paymentId);
     }
   } catch (error) {
     console.error("Erro ao processar webhook Mercado Pago", error);

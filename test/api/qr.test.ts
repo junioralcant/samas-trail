@@ -1,7 +1,13 @@
 import { strict as assert } from "node:assert";
 import { beforeEach, describe, it } from "node:test";
 import { GET } from "@/app/api/qr/[token]/route";
-import { ctx, inserirInscricao, limparBanco, pedido } from "../helpers";
+import {
+  ctx,
+  inserirInscricao,
+  inserirPedidoCamisa,
+  limparBanco,
+  pedido,
+} from "../helpers";
 
 const URL_ROTA = "http://localhost:3000/api/qr";
 
@@ -43,5 +49,21 @@ describe("GET /api/qr/[token]", () => {
     const resposta = await baixar("a".repeat(32));
     assert.equal(resposta.status, 404);
     assert.deepEqual(await resposta.json(), { erro: "QR code inválido" });
+  });
+
+  // O mesmo endereco serve os dois tokens: quem comprou camisa sem se
+  // inscrever precisa do QR proprio para retirar.
+  it("gera o PNG do QR do pedido de camisa", async () => {
+    const item = inserirPedidoCamisa();
+
+    const resposta = await baixar(String(item.token));
+
+    assert.equal(resposta.status, 200);
+    assert.equal(resposta.headers.get("Content-Type"), "image/png");
+    const bytes = new Uint8Array(await resposta.arrayBuffer());
+    assert.deepEqual(
+      Array.from(bytes.slice(0, 8)),
+      [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+    );
   });
 });

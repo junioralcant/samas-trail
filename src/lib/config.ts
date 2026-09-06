@@ -2,6 +2,27 @@ export type Distancia = "8km" | "18km";
 
 export const DISTANCIAS: Distancia[] = ["8km", "18km"];
 
+export type TamanhoCamiseta = "PP" | "P" | "M" | "G" | "GG";
+
+/** Camiseta que vem no kit da inscricao. */
+export const TAMANHOS_CAMISETA: TamanhoCamiseta[] = ["PP", "P", "M", "G", "GG"];
+
+export type TamanhoCamisaExtra = "P" | "M" | "G" | "GG" | "XG";
+
+// A camisa extra e outra peca, de outra producao: nao tem PP e tem XG.
+// As duas grades sao separadas de proposito — unifica-las quebraria uma
+// das duas na primeira vez que uma mudar.
+export const TAMANHOS_CAMISA_EXTRA: TamanhoCamisaExtra[] = [
+  "P",
+  "M",
+  "G",
+  "GG",
+  "XG",
+];
+
+/** Teto de camisas extras por pedido. */
+export const MAX_CAMISAS_POR_PEDIDO = 5;
+
 export const getEventName = () => process.env.EVENT_NAME ?? "Corrida de Trilha";
 
 export const getPreco = (distancia: Distancia) => {

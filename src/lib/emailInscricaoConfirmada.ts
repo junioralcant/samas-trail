@@ -1,5 +1,6 @@
 import { getAppUrl } from "./config";
 import { enviarEmail } from "./email";
+import { resumirItens, type ItemCamisa } from "./estoque";
 import { ehMenorDeIdade } from "./idade";
 import type { Inscricao } from "./types";
 
@@ -39,6 +40,7 @@ const valorDestaque = (texto: string, cor: string) =>
 
 export const enviarEmailInscricaoConfirmada = async (
   inscricao: Inscricao,
+  camisasExtras: ItemCamisa[] = [],
 ): Promise<boolean> => {
   const eventName = process.env.EVENT_NAME ?? "SAMAS TRAIL";
   const eventDate = process.env.NEXT_PUBLIC_EVENT_DATE ?? "a definir";
@@ -59,6 +61,12 @@ export const enviarEmailInscricaoConfirmada = async (
         ),
       )
     : "";
+  // A camisa extra sai junto do kit: entra como detalhe da inscricao, sem
+  // e-mail proprio.
+  const linhaCamisaExtra =
+    camisasExtras.length > 0
+      ? linhaDetalhe("Camisa extra", valorComum(resumirItens(camisasExtras)))
+      : "";
   const linhaTermo = inscricao.termo_aceito_em
     ? linhaDetalhe(
         "Termo aceito em",
@@ -194,8 +202,9 @@ export const enviarEmailInscricaoConfirmada = async (
           ${linhaDetalhe("Data da prova", valorComum(eventDate))}
           ${linhaDetalhe("Local", valorComum(localHtml))}
           ${linhaDetalhe("Camiseta", valorComum(inscricao.tamanho_camiseta), {
-            ultima: linhaTermo === "",
+            ultima: linhaTermo === "" && linhaCamisaExtra === "",
           })}
+          ${linhaCamisaExtra}
           ${linhaTermo}
         </table>
       </td>

@@ -2,15 +2,18 @@ import { strict as assert } from "node:assert";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { POST } from "@/app/api/inscricoes/route";
 import type { Inscricao } from "@/lib/types";
+import { disponibilidade } from "@/lib/estoque";
 import {
   buscarInscricao,
   contarInscricoes,
+  contarPedidosCamisa,
   inserirCupom,
   inserirInscricao,
   limparBanco,
   pedido,
   silenciarErros,
   ultimaInscricao,
+  ultimoPedidoCamisa,
 } from "../helpers";
 
 const URL_ROTA = "http://localhost:3000/api/inscricoes";
@@ -390,5 +393,139 @@ describe("POST /api/inscricoes — falha no Mercado Pago", () => {
     assert.equal(resposta.status, 200);
     assert.equal(corpo.initPoint, undefined);
     assert.equal(ultimaInscricao()?.mp_preference_id, null);
+  });
+});
+
+describe("POST /api/inscricoes — camisa extra junto", () => {
+  const comCamisa = (tamanhos: unknown) =>
+    inscrever({ ...FORMULARIO, camisasExtras: tamanhos });
+
+  it("inscreve sem camisa nenhuma", async () => {
+    const resposta = await inscrever(FORMULARIO);
+    assert.equal(resposta.status, 200);
+    assert.equal(contarPedidosCamisa(), 0);
+  });
+
+  it("grava o pedido vinculado a inscricao", async () => {
+    const resposta = await comCamisa([
+      { tamanho: "M", quantidade: 2 },
+      { tamanho: "G", quantidade: 1 },
+    ]);
+    const corpo = (await resposta.json()) as { id: number };
+
+    assert.equal(resposta.status, 200);
+    const camisa = ultimoPedidoCamisa();
+    assert.equal(camisa?.inscricao_id, corpo.id);
+    assert.equal(camisa?.origem, "inscricao");
+    assert.equal(camisa?.quantidade, 3);
+    assert.equal(camisa?.valor, 60);
+    assert.equal(camisa?.status_pagamento, "pendente");
+    assert.equal(camisa?.mp_preference_id, "pref-teste");
+  });
+
+  // O cupom desconta a inscricao, nao a camisa; e a receita por inscricao
+  // continua sendo so a da inscricao.
+  it("nao mistura o valor da camisa com o da inscricao", async () => {
+    const resposta = await comCamisa([{ tamanho: "M", quantidade: 1 }]);
+    const corpo = (await resposta.json()) as { id: number };
+    assert.equal(buscarInscricao(corpo.id)?.valor, 130);
+    assert.equal(ultimoPedidoCamisa()?.valor, 20);
+  });
+
+  it("manda inscricao e camisas como itens separados no checkout", async () => {
+    await comCamisa([{ tamanho: "GG", quantidade: 2 }]);
+    const chamada = globalThis.__testeMp.chamadas.find(
+      (c) => c.metodo === "preference.create",
+    ) as { args: { body: { items: { title: string; unit_price: number }[] } } };
+
+    assert.deepEqual(
+      chamada.args.body.items.map((i) => [i.title, i.unit_price]),
+      [
+        ["Inscrição 8km — SAMAS TRAIL", 130],
+        ["Camisa extra SAMAS TRAIL — tamanho GG", 20],
+      ],
+    );
+  });
+
+  it("recusa tamanho fora da grade da camisa extra", async () => {
+    const resposta = await comCamisa([{ tamanho: "PP", quantidade: 1 }]);
+    assert.equal(resposta.status, 400);
+    assert.deepEqual(await resposta.json(), {
+      erro: "Tamanho de camisa inválido",
+    });
+  });
+
+  it("recusa mais de 5 camisas", async () => {
+    const resposta = await comCamisa([{ tamanho: "M", quantidade: 6 }]);
+    assert.equal(resposta.status, 400);
+    assert.deepEqual(await resposta.json(), {
+      erro: "No máximo 5 camisas por compra",
+    });
+  });
+
+  // Camisa esgotada nao pode custar a inscricao: nada e gravado e o atleta
+  // volta com tudo intacto para tirar a camisa e seguir.
+  it("estoque insuficiente nao cria a inscricao", async () => {
+    const resposta = await comCamisa([{ tamanho: "P", quantidade: 1 }]);
+
+    assert.equal(resposta.status, 409);
+    assert.deepEqual(await resposta.json(), {
+      erro: "Não temos mais 1 camisa(s) tamanho P",
+      faltas: [{ tamanho: "P", pedido: 1, disponivel: 0 }],
+    });
+    assert.equal(contarInscricoes(), 0);
+    assert.equal(contarPedidosCamisa(), 0);
+  });
+
+  it("estoque insuficiente nao apaga a inscricao pendente que ja existia", async () => {
+    const existente = inserirInscricao({ cpf: "52998224725" });
+    const resposta = await comCamisa([{ tamanho: "P", quantidade: 1 }]);
+
+    assert.equal(resposta.status, 409);
+    assert.equal(buscarInscricao(existente.id)?.nome, "Atleta Teste");
+  });
+
+  // Refazer a inscricao pendente nao pode acumular reservas da tentativa
+  // anterior: o pedido velho sai e as pecas voltam.
+  it("refazer a inscricao troca o pedido pendente em vez de somar", async () => {
+    const primeira = await comCamisa([{ tamanho: "XG", quantidade: 1 }]);
+    assert.equal(primeira.status, 200);
+
+    const segunda = await comCamisa([{ tamanho: "GG", quantidade: 1 }]);
+    assert.equal(segunda.status, 200);
+
+    assert.equal(contarPedidosCamisa(), 1);
+    assert.equal(ultimoPedidoCamisa()?.quantidade, 1);
+    // A XG da tentativa anterior voltou para o estoque.
+    assert.equal(disponibilidade().XG, 1);
+  });
+
+  it("apaga inscricao e pedido quando o Mercado Pago falha", async () => {
+    restauradores.push(silenciarErros().restaurar);
+    globalThis.__testeMp.preferenceCreate = async () => {
+      throw new Error("MP fora do ar");
+    };
+
+    const resposta = await comCamisa([{ tamanho: "M", quantidade: 1 }]);
+
+    assert.equal(resposta.status, 502);
+    assert.equal(contarInscricoes(), 0);
+    assert.equal(contarPedidosCamisa(), 0);
+  });
+});
+
+describe("POST /api/inscricoes — checkout sem id de preferencia", () => {
+  it("aceita preferencia sem id tambem no pedido de camisa", async () => {
+    globalThis.__testeMp.preferenceCreate = async () => ({
+      init_point: "https://mp.test/checkout/sem-id",
+    });
+
+    const resposta = await inscrever({
+      ...FORMULARIO,
+      camisasExtras: [{ tamanho: "M", quantidade: 1 }],
+    });
+
+    assert.equal(resposta.status, 200);
+    assert.equal(ultimoPedidoCamisa()?.mp_preference_id, null);
   });
 });

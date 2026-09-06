@@ -1,18 +1,50 @@
 // Utilidades compartilhadas pelos testes: banco limpo, fixtures de inscricao
 // e cupom, sessao de admin e atalhos para montar Request/params de rota.
 import { buildSessionToken, SESSION_COOKIE } from "@/lib/auth";
+import type { TamanhoCamisaExtra } from "@/lib/config";
 import { gerarKitToken, getDb } from "@/lib/db";
-import type { Cupom, Inscricao } from "@/lib/types";
+import type { ItemCamisa } from "@/lib/estoque";
+import type { Cupom, Inscricao, PedidoCamisa } from "@/lib/types";
+
+// Estoque que os testes assumem quando nao mexem nele. Bate com a semente
+// da migracao, para nao existirem dois numeros de verdade.
+const ESTOQUE_PADRAO: Record<string, number> = {
+  P: 0,
+  M: 33,
+  G: 16,
+  GG: 4,
+  XG: 1,
+};
 
 export const limparBanco = () => {
   const db = getDb();
+  db.exec("DELETE FROM itens_camisa");
+  db.exec("DELETE FROM pedidos_camisa");
   db.exec("DELETE FROM inscricoes");
   db.exec("DELETE FROM cupons");
+  db.exec("DELETE FROM configuracoes");
   db.exec("DELETE FROM sqlite_sequence");
+  // A tabela nao e esvaziada: sem estoque nao da para vender nada, e todo
+  // teste teria de semear de novo.
+  const repor = db.prepare(
+    `INSERT INTO estoque_camisa (tamanho, total) VALUES (?, ?)
+     ON CONFLICT (tamanho) DO UPDATE SET total = excluded.total`,
+  );
+  for (const [tamanho, total] of Object.entries(ESTOQUE_PADRAO)) {
+    repor.run(tamanho, total);
+  }
   globalThis.__testeMp.configs = [];
   globalThis.__testeMp.chamadas = [];
   return db;
 };
+
+export const definirEstoque = (tamanho: TamanhoCamisaExtra, total: number) =>
+  getDb()
+    .prepare(
+      `INSERT INTO estoque_camisa (tamanho, total) VALUES (?, ?)
+       ON CONFLICT (tamanho) DO UPDATE SET total = excluded.total`,
+    )
+    .run(tamanho, total);
 
 const INSCRICAO_PADRAO = {
   nome: "Atleta Teste",
@@ -109,6 +141,96 @@ export const inserirCupom = ({
     .prepare("SELECT * FROM cupons WHERE id = ?")
     .get(Number(resultado.lastInsertRowid)) as unknown as Cupom;
 };
+
+const PEDIDO_PADRAO = {
+  inscricao_id: null as number | null,
+  nome: "Compradora Teste",
+  cpf: "52998224725",
+  email: "compradora@teste.com",
+  telefone: "(98) 98888-0000",
+  origem: "avulso",
+  valor_unitario: 20,
+  promocional: 1,
+  status_pagamento: "pendente",
+  mp_preference_id: null as string | null,
+  mp_payment_id: null as string | null,
+  token: undefined as string | null | undefined,
+  // Reserva viva por padrao: o pendente segura o estoque.
+  reservado_ate: "2099-01-01 00:00:00" as string | null,
+  estoque_estourado: 0,
+  retirado_em: null as string | null,
+};
+
+/** Insere um pedido de camisa com seus itens (padrao: 1 camisa M). */
+export const inserirPedidoCamisa = (
+  campos: Partial<typeof PEDIDO_PADRAO> = {},
+  itens: ItemCamisa[] = [{ tamanho: "M", quantidade: 1 }],
+): PedidoCamisa => {
+  const dados = { ...PEDIDO_PADRAO, ...campos };
+  const token =
+    "token" in campos ? (campos.token ?? null) : gerarKitToken();
+  const quantidade = itens.reduce((soma, item) => soma + item.quantidade, 0);
+  const db = getDb();
+  const resultado = db
+    .prepare(
+      `INSERT INTO pedidos_camisa
+        (inscricao_id, nome, cpf, email, telefone, origem, quantidade,
+         valor_unitario, valor, promocional, status_pagamento,
+         mp_preference_id, mp_payment_id, token, reservado_ate,
+         estoque_estourado, retirado_em)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      dados.inscricao_id,
+      dados.nome,
+      dados.cpf,
+      dados.email,
+      dados.telefone,
+      dados.origem,
+      quantidade,
+      dados.valor_unitario,
+      dados.valor_unitario * quantidade,
+      dados.promocional,
+      dados.status_pagamento,
+      dados.mp_preference_id,
+      dados.mp_payment_id,
+      token,
+      dados.reservado_ate,
+      dados.estoque_estourado,
+      dados.retirado_em,
+    );
+  const id = Number(resultado.lastInsertRowid);
+  const inserirItem = db.prepare(
+    "INSERT INTO itens_camisa (pedido_id, tamanho, quantidade) VALUES (?, ?, ?)",
+  );
+  for (const item of itens) {
+    inserirItem.run(id, item.tamanho, item.quantidade);
+  }
+  return buscarPedidoCamisa(id) as PedidoCamisa;
+};
+
+export const buscarPedidoCamisa = (id: number): PedidoCamisa | undefined =>
+  getDb()
+    .prepare("SELECT * FROM pedidos_camisa WHERE id = ?")
+    .get(id) as unknown as PedidoCamisa | undefined;
+
+export const ultimoPedidoCamisa = (): PedidoCamisa | undefined =>
+  getDb()
+    .prepare("SELECT * FROM pedidos_camisa ORDER BY id DESC LIMIT 1")
+    .get() as unknown as PedidoCamisa | undefined;
+
+export const contarPedidosCamisa = (): number =>
+  (
+    getDb()
+      .prepare("SELECT COUNT(*) AS total FROM pedidos_camisa")
+      .get() as unknown as { total: number }
+  ).total;
+
+/** Vence a reserva sem ter de esperar os 30 minutos de verdade. */
+export const vencerReserva = (id: number) =>
+  getDb()
+    .prepare("UPDATE pedidos_camisa SET reservado_ate = ? WHERE id = ?")
+    .run("2000-01-01 00:00:00", id);
 
 export const definirCriadoEm = (id: number, quando: string) =>
   getDb()

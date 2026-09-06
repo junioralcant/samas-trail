@@ -5,6 +5,7 @@ import type { Inscricao } from "@/lib/types";
 import {
   definirCriadoEm,
   inserirInscricao,
+  inserirPedidoCamisa,
   limparBanco,
   logarComoAdmin,
   marcarKitRetirado,
@@ -179,5 +180,84 @@ describe("GET /api/admin/inscricoes", () => {
 
     assert.equal(corpo.inscricoes.length, 1);
     assert.equal(corpo.stats.total, 2);
+  });
+});
+
+describe("GET /api/admin/inscricoes — camisa extra vinculada", () => {
+  const listar = async () => {
+    const resposta = await GET(pedido(URL_ROTA, { method: "GET" }));
+    return (await resposta.json()) as {
+      inscricoes: (Inscricao & {
+        camisas_extras: { tamanho: string; quantidade: number }[];
+        camisas_extras_total: number;
+        camisas_extras_resumo: string;
+      })[];
+      stats: { camisas: { pagas: number; receita: number; pecas: number } };
+    };
+  };
+
+  beforeEach(() => {
+    logarComoAdmin();
+  });
+
+  it("marca zero camisas quando o atleta nao comprou", async () => {
+    inserirInscricao();
+    const corpo = await listar();
+    assert.equal(corpo.inscricoes[0].camisas_extras_total, 0);
+    assert.equal(corpo.inscricoes[0].camisas_extras_resumo, "");
+  });
+
+  // O kit e a camisa saem na mesma entrega: quem confere na tenda precisa
+  // ver isso na linha do atleta.
+  it("mostra as camisas do atleta somadas por tamanho", async () => {
+    const inscricao = inserirInscricao();
+    inserirPedidoCamisa({ inscricao_id: inscricao.id, origem: "inscricao" }, [
+      { tamanho: "M", quantidade: 2 },
+      { tamanho: "G", quantidade: 1 },
+    ]);
+
+    const corpo = await listar();
+
+    assert.equal(corpo.inscricoes[0].camisas_extras_total, 3);
+    assert.equal(corpo.inscricoes[0].camisas_extras_resumo, "2× M, 1× G");
+  });
+
+  // Comprou avulso com o mesmo CPF: o vinculo tem de aparecer igual.
+  it("soma tambem a camisa comprada avulsa e vinculada depois", async () => {
+    const inscricao = inserirInscricao();
+    inserirPedidoCamisa({ inscricao_id: inscricao.id, origem: "inscricao" }, [
+      { tamanho: "M", quantidade: 1 },
+    ]);
+    inserirPedidoCamisa({ inscricao_id: inscricao.id, origem: "avulso" }, [
+      { tamanho: "M", quantidade: 1 },
+      { tamanho: "GG", quantidade: 1 },
+    ]);
+
+    const corpo = await listar();
+
+    assert.equal(corpo.inscricoes[0].camisas_extras_total, 3);
+    assert.equal(corpo.inscricoes[0].camisas_extras_resumo, "2× M, 1× GG");
+  });
+
+  it("ignora pedido cancelado", async () => {
+    const inscricao = inserirInscricao();
+    inserirPedidoCamisa({
+      inscricao_id: inscricao.id,
+      status_pagamento: "cancelado",
+    });
+
+    const corpo = await listar();
+
+    assert.equal(corpo.inscricoes[0].camisas_extras_total, 0);
+  });
+
+  it("traz as estatisticas de camisa junto", async () => {
+    inserirPedidoCamisa({ status_pagamento: "pago" }, [
+      { tamanho: "M", quantidade: 2 },
+    ]);
+    const corpo = await listar();
+    assert.equal(corpo.stats.camisas.pagas, 2);
+    assert.equal(corpo.stats.camisas.receita, 40);
+    assert.equal(corpo.stats.camisas.pecas, 54);
   });
 });

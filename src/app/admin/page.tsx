@@ -7,9 +7,57 @@ import LeitorKit from "./LeitorKit";
 type Distancia = "8km" | "18km";
 type StatusPagamento = "pendente" | "pago" | "cancelado";
 
+type ItemCamisa = { tamanho: string; quantidade: number };
+
+type PedidoCamisa = {
+  id: number;
+  nome: string;
+  cpf: string;
+  email: string;
+  telefone: string;
+  origem: string;
+  quantidade: number;
+  valor: number;
+  status_pagamento: StatusPagamento;
+  estoque_estourado: number;
+  retirado_em: string | null;
+  token: string | null;
+  criado_em: string;
+  itens: ItemCamisa[];
+  resumo: string;
+  inscricao: { id: number; nome: string; distancia: string } | null;
+};
+
+type LinhaEstoque = {
+  tamanho: string;
+  total: number;
+  vendidas: number;
+  reservadas: number;
+  disponivel: number;
+};
+
+type PrecoCamisa = {
+  precoCheio: number;
+  precoPromo: number | null;
+  precoAtual: number;
+  emPromocao: boolean;
+};
+
+type StatsCamisas = {
+  pagas: number;
+  receita: number;
+  pecas: number;
+  pedidos: number;
+  entregues: number;
+  semPeca: number;
+};
+
 type Inscricao = {
   id: number;
   nome: string;
+  camisas_extras: ItemCamisa[];
+  camisas_extras_total: number;
+  camisas_extras_resumo: string;
   cpf: string;
   email: string;
   telefone: string;
@@ -49,6 +97,7 @@ type Stats = {
   kitsRetirados: number;
   menoresDeIdade: number;
   semTermo: number;
+  camisas: StatsCamisas;
 };
 
 const eventDate = process.env.NEXT_PUBLIC_EVENT_DATE ?? "";
@@ -89,6 +138,15 @@ export default function AdminPage() {
   });
   const [erroCupom, setErroCupom] = useState<string | null>(null);
   const [salvandoCupom, setSalvandoCupom] = useState(false);
+  const [pedidosCamisa, setPedidosCamisa] = useState<PedidoCamisa[]>([]);
+  const [estoque, setEstoque] = useState<LinhaEstoque[]>([]);
+  const [precoCamisa, setPrecoCamisa] = useState<PrecoCamisa | null>(null);
+  const [formPreco, setFormPreco] = useState({ cheio: "", promo: "" });
+  const [totaisEstoque, setTotaisEstoque] = useState<Record<string, string>>({});
+  const [erroPreco, setErroPreco] = useState<string | null>(null);
+  const [erroEstoque, setErroEstoque] = useState<string | null>(null);
+  const [salvandoPreco, setSalvandoPreco] = useState(false);
+  const [salvandoEstoque, setSalvandoEstoque] = useState(false);
 
   const carregarInscricoes = useCallback(async () => {
     const params = new URLSearchParams();
@@ -131,11 +189,37 @@ export default function AdminPage() {
     carregarInscricoes();
   }, [carregarInscricoes]);
 
+  const carregarCamisas = useCallback(async () => {
+    const response = await fetch("/api/admin/camisas");
+    if (!response.ok) {
+      return;
+    }
+    const data = await response.json();
+    setPedidosCamisa(data.pedidos);
+    setEstoque(data.estoque);
+    setPrecoCamisa(data.preco);
+    setFormPreco({
+      cheio: data.preco.precoCheio.toFixed(2).replace(".", ","),
+      promo: data.preco.precoPromo
+        ? data.preco.precoPromo.toFixed(2).replace(".", ",")
+        : "",
+    });
+    setTotaisEstoque(
+      Object.fromEntries(
+        (data.estoque as LinhaEstoque[]).map((l) => [
+          l.tamanho,
+          String(l.total),
+        ]),
+      ),
+    );
+  }, []);
+
   useEffect(() => {
     if (autenticado) {
       carregarCupons();
+      carregarCamisas();
     }
-  }, [autenticado, carregarCupons]);
+  }, [autenticado, carregarCupons, carregarCamisas]);
 
   const fazerLogin = async (event: FormEvent) => {
     event.preventDefault();
@@ -233,6 +317,84 @@ export default function AdminPage() {
     await carregarCupons();
   };
 
+  const salvarPreco = async (event: FormEvent) => {
+    event.preventDefault();
+    setErroPreco(null);
+    setSalvandoPreco(true);
+    try {
+      const response = await fetch("/api/admin/camisas/preco", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          precoCheio: formPreco.cheio,
+          precoPromo: formPreco.promo,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setErroPreco(data.erro ?? "Não foi possível salvar o preço.");
+        return;
+      }
+      await carregarCamisas();
+    } finally {
+      setSalvandoPreco(false);
+    }
+  };
+
+  const salvarEstoque = async (event: FormEvent) => {
+    event.preventDefault();
+    setErroEstoque(null);
+    setSalvandoEstoque(true);
+    try {
+      const response = await fetch("/api/admin/camisas/estoque", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          totais: Object.fromEntries(
+            Object.entries(totaisEstoque).map(([t, v]) => [t, Number(v)]),
+          ),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setErroEstoque(data.erro ?? "Não foi possível salvar o estoque.");
+        return;
+      }
+      await carregarCamisas();
+    } finally {
+      setSalvandoEstoque(false);
+    }
+  };
+
+  const atualizarPedidoCamisa = async (
+    id: number,
+    campos: {
+      statusPagamento?: StatusPagamento;
+      retirado?: boolean;
+      estoqueResolvido?: boolean;
+    },
+  ) => {
+    await fetch(`/api/admin/camisas/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(campos),
+    });
+    await carregarCamisas();
+    await carregarInscricoes();
+  };
+
+  const excluirPedidoCamisa = async (pedido: PedidoCamisa) => {
+    const confirmado = window.confirm(
+      `Excluir o pedido de camisa de ${pedido.nome}? As peças voltam para o estoque.`,
+    );
+    if (!confirmado) {
+      return;
+    }
+    await fetch(`/api/admin/camisas/${pedido.id}`, { method: "DELETE" });
+    await carregarCamisas();
+    await carregarInscricoes();
+  };
+
   const limparFiltros = () => {
     setBusca("");
     setFiltroDistancia("");
@@ -292,6 +454,11 @@ export default function AdminPage() {
           <a href="/api/admin/export">
             <button className="botao-vermelho" type="button">
               Exportar CSV
+            </button>
+          </a>
+          <a href="/api/admin/export/camisas">
+            <button className="botao-contorno" type="button">
+              CSV de camisas
             </button>
           </a>
           <button
@@ -356,6 +523,22 @@ export default function AdminPage() {
                 {stats.menoresDeIdade > 0
                   ? "exigir termo do responsável no kit"
                   : "nenhum inscrito menor de idade"}
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-rotulo">Camisas pagas</div>
+              <div className="stat-valor display">{stats.camisas.pagas}</div>
+              <div className="stat-nota">de {stats.camisas.pecas} peças</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-rotulo">Receita de camisas</div>
+              <div className="stat-valor display">
+                {formatarPreco(stats.camisas.receita)}
+              </div>
+              <div className="stat-nota">
+                {precoCamisa?.emPromocao
+                  ? `promoção ativa · ${formatarPreco(precoCamisa.precoAtual)}`
+                  : "sem promoção"}
               </div>
             </div>
             <div className="stat-card">
@@ -454,8 +637,26 @@ export default function AdminPage() {
                     <div className="celula-nome">
                       {inscricao.nome}
                       {(ehMenorDeIdade(inscricao.data_nascimento) ||
-                        !inscricao.termo_aceito_em) && (
+                        !inscricao.termo_aceito_em ||
+                        inscricao.camisas_extras_total > 0) && (
                         <span className="celula-alertas">
+                          {/* Sai junto do kit: quem entrega precisa ver
+                              aqui, não numa aba separada. */}
+                          {inscricao.camisas_extras_total > 0 && (
+                            <span
+                              className="badge-alerta badge-alerta-camisa"
+                              title={`Camisa extra comprada: ${inscricao.camisas_extras_resumo}. Entregar junto com o kit.`}
+                            >
+                              +{inscricao.camisas_extras_total}{" "}
+                              {inscricao.camisas_extras_total === 1
+                                ? "camisa"
+                                : "camisas"}{" "}
+                              ·{" "}
+                              {inscricao.camisas_extras
+                                .map((c) => c.tamanho)
+                                .join(", ")}
+                            </span>
+                          )}
                           {ehMenorDeIdade(inscricao.data_nascimento) && (
                             <span
                               className="badge-alerta"
@@ -586,6 +787,307 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
+
+        <section className="cupons-card">
+          <div className="cupons-cabecalho">
+            <div>
+              <div className="cupons-titulo display">Camisas extras</div>
+              <div className="cupons-subtitulo">
+                Peça vendida à parte da inscrição, com estoque próprio e
+                finito. Vínculo decide a entrega: com inscrição sai no kit,
+                sem inscrição sai por QR próprio.
+              </div>
+            </div>
+            {precoCamisa && (
+              <span
+                className={`pill-promo ${
+                  precoCamisa.emPromocao ? "ativa" : ""
+                }`}
+              >
+                {precoCamisa.emPromocao ? "Promoção ativa" : "Sem promoção"}
+              </span>
+            )}
+          </div>
+
+          <form className="cupom-form" onSubmit={salvarPreco}>
+            <label className="campo">
+              <span className="campo-rotulo">Preço cheio (R$)</span>
+              <input
+                required
+                inputMode="decimal"
+                value={formPreco.cheio}
+                onChange={(event) =>
+                  setFormPreco((p) => ({ ...p, cheio: event.target.value }))
+                }
+                placeholder="45,00"
+              />
+            </label>
+            <label className="campo">
+              <span className="campo-rotulo">Preço promocional (R$)</span>
+              <input
+                inputMode="decimal"
+                value={formPreco.promo}
+                onChange={(event) =>
+                  setFormPreco((p) => ({ ...p, promo: event.target.value }))
+                }
+                placeholder="vazio = sem promoção"
+              />
+            </label>
+            <button
+              className="botao-vermelho"
+              type="submit"
+              disabled={salvandoPreco}
+            >
+              {salvandoPreco ? "Salvando..." : "Salvar preço"}
+            </button>
+          </form>
+          <div className="cupons-subtitulo">
+            Esvazie o preço promocional para desligar a promoção — o site
+            volta a vender pelo preço cheio imediatamente, sem selo e sem
+            preço riscado.
+          </div>
+
+          {erroPreco && (
+            <div className="banner-erro">
+              <div className="banner-erro-icone">!</div>
+              <div className="banner-erro-titulo">{erroPreco}</div>
+            </div>
+          )}
+
+          <form className="estoque-bloco" onSubmit={salvarEstoque}>
+            <div className="estoque-cabecalho">
+              <div className="estoque-titulo">Quadro de estoque</div>
+              <div className="estoque-formula">
+                Disponível = total − vendidas − reservadas
+              </div>
+            </div>
+            <div className="estoque-tabela">
+              <div className="estoque-linha estoque-cabecalho-linha">
+                <div>Tam.</div>
+                <div>Total</div>
+                <div>Vendidas</div>
+                <div>Reservadas</div>
+                <div>Disponíveis</div>
+              </div>
+              {estoque.map((linha) => (
+                <div className="estoque-linha" key={linha.tamanho}>
+                  <div className="estoque-tamanho">{linha.tamanho}</div>
+                  <div>
+                    <input
+                      className="estoque-input"
+                      inputMode="numeric"
+                      value={totaisEstoque[linha.tamanho] ?? ""}
+                      onChange={(event) =>
+                        setTotaisEstoque((p) => ({
+                          ...p,
+                          [linha.tamanho]: event.target.value,
+                        }))
+                      }
+                      aria-label={`Total de camisas ${linha.tamanho}`}
+                    />
+                  </div>
+                  <div className="estoque-numero">{linha.vendidas}</div>
+                  <div className="estoque-numero">{linha.reservadas}</div>
+                  <div className="estoque-numero">
+                    {linha.disponivel}
+                    {linha.disponivel <= 0 && (
+                      <span className="badge-alerta">
+                        {linha.reservadas > 0 && linha.disponivel === 0
+                          ? "Reservada"
+                          : "Esgotado"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {erroEstoque && (
+              <div className="banner-erro">
+                <div className="banner-erro-icone">!</div>
+                <div>
+                  <div className="banner-erro-titulo">Total inválido</div>
+                  <div className="banner-erro-texto">{erroEstoque}</div>
+                </div>
+              </div>
+            )}
+            <div className="estoque-rodape">
+              <span>
+                Total é o único campo editável — vendidas e reservadas vêm dos
+                pedidos.
+              </span>
+              <button
+                className="botao-contorno"
+                type="submit"
+                disabled={salvandoEstoque}
+              >
+                {salvandoEstoque ? "Salvando..." : "Salvar estoque"}
+              </button>
+            </div>
+          </form>
+
+          <div className="pedidos-titulo">
+            Pedidos de camisa · {pedidosCamisa.length}
+          </div>
+
+          {pedidosCamisa.length === 0 ? (
+            <div className="cupons-vazio">
+              Nenhuma camisa vendida ainda. Os pedidos aparecem aqui assim que
+              o primeiro pagamento for aprovado.
+            </div>
+          ) : (
+            <div className="tabela-scroll">
+              <div className="tabela-grid tabela-camisas">
+                <div className="camisas-colunas tabela-cabecalho">
+                  <div>Comprador</div>
+                  <div>CPF</div>
+                  <div>Contato</div>
+                  <div>Tamanhos</div>
+                  <div>Valor</div>
+                  <div>Status</div>
+                  <div>Vínculo</div>
+                  <div>Retirada</div>
+                  <div>Ações</div>
+                </div>
+                {pedidosCamisa.map((pedido) => (
+                  <div
+                    className={`camisas-colunas tabela-linha ${
+                      pedido.estoque_estourado ? "linha-sem-peca" : ""
+                    }`}
+                    key={pedido.id}
+                  >
+                    <div className="celula-nome">{pedido.nome}</div>
+                    <div className="celula-numerica">
+                      {formatarCpf(pedido.cpf)}
+                    </div>
+                    <div className="celula-contato">
+                      <span className="celula-contato-email">
+                        {pedido.email}
+                      </span>
+                      <span className="celula-contato-fone">
+                        {pedido.telefone}
+                      </span>
+                    </div>
+                    <div className="celula-secundaria">{pedido.resumo}</div>
+                    <div className="celula-valor">
+                      {formatarPreco(pedido.valor)}
+                    </div>
+                    <div>
+                      {pedido.estoque_estourado ? (
+                        <span
+                          className="badge cancelado"
+                          title="Pagamento aprovado depois que a reserva venceu e a peça já tinha sido vendida"
+                        >
+                          sem peça
+                        </span>
+                      ) : (
+                        <span className={`badge ${pedido.status_pagamento}`}>
+                          {pedido.status_pagamento}
+                        </span>
+                      )}
+                    </div>
+                    <div className="celula-vinculo">
+                      {pedido.inscricao ? (
+                        <>
+                          <span className="celula-vinculo-nome">
+                            Inscrição #{pedido.inscricao.id} —{" "}
+                            {pedido.inscricao.nome}
+                          </span>
+                          <span className="celula-vinculo-nota">
+                            {pedido.inscricao.distancia} · sai no kit
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="celula-vinculo-nome">
+                            Sem inscrição
+                          </span>
+                          <span className="celula-vinculo-nota">
+                            {pedido.status_pagamento === "pago"
+                              ? "QR próprio"
+                              : "QR não emitido"}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    <div>
+                      <button
+                        className={`botao-kit ${
+                          pedido.retirado_em ? "retirado" : ""
+                        }`}
+                        type="button"
+                        title={
+                          pedido.retirado_em
+                            ? `Retirada em ${pedido.retirado_em} — clique para desfazer`
+                            : "Confirmar entrega da camisa"
+                        }
+                        onClick={() =>
+                          atualizarPedidoCamisa(pedido.id, {
+                            retirado: !pedido.retirado_em,
+                          })
+                        }
+                      >
+                        {pedido.retirado_em ? "✔ Entregue" : "Pendente"}
+                      </button>
+                    </div>
+                    <div className="celula-acoes">
+                      <select
+                        className="select-tabela"
+                        value={pedido.status_pagamento}
+                        onChange={(event) =>
+                          atualizarPedidoCamisa(pedido.id, {
+                            statusPagamento: event.target
+                              .value as StatusPagamento,
+                          })
+                        }
+                      >
+                        <option value="pendente">Pendente</option>
+                        <option value="pago">Pago</option>
+                        <option value="cancelado">Cancelado</option>
+                      </select>
+                      {pedido.estoque_estourado === 1 && (
+                        <button
+                          className="botao-contorno"
+                          type="button"
+                          title="Marcar como resolvido por contato (troca de tamanho ou estorno)"
+                          onClick={() =>
+                            atualizarPedidoCamisa(pedido.id, {
+                              estoqueResolvido: true,
+                            })
+                          }
+                        >
+                          Resolver
+                        </button>
+                      )}
+                      <button
+                        className="botao-excluir"
+                        type="button"
+                        onClick={() => excluirPedidoCamisa(pedido)}
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {stats && stats.camisas.semPeca > 0 && (
+            <div className="banner-erro">
+              <div className="banner-erro-icone">!</div>
+              <div>
+                <div className="banner-erro-titulo">
+                  {stats.camisas.semPeca} pedido(s) pago(s) sem peça disponível
+                </div>
+                <div className="banner-erro-texto">
+                  O pagamento entrou depois da reserva vencer e a peça já tinha
+                  sido vendida. Dinheiro capturado, camisa inexistente —
+                  resolva por contato: ofereça outro tamanho ou estorne.
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
 
         <section className="cupons-card">
           <div className="cupons-cabecalho">

@@ -36,6 +36,7 @@ const LogoLinha = () => (
 export default async function RetornoPage({ searchParams }: RetornoPageProps) {
   const { resultado, external_reference } = await searchParams;
   const inscricao = buscarInscricao(external_reference);
+  const aindaPendente = inscricao?.status_pagamento === "pendente";
 
   // O banco é a fonte da verdade: se o webhook já confirmou o pagamento,
   // mostra a confirmação mesmo que o Mercado Pago redirecione como pendente.
@@ -50,6 +51,12 @@ export default async function RetornoPage({ searchParams }: RetornoPageProps) {
           <p className="retorno-texto">
             Pagamento aprovado. Nos vemos na trilha!
           </p>
+          {/* O Mercado Pago redireciona como sucesso antes de o webhook
+              chegar (e ele pode atrasar ou se perder). Sem esta consulta a
+              inscrição ficaria pendente e o e-mail nunca sairia. */}
+          {inscricao && aindaPendente && (
+            <VerificadorPagamento inscricaoId={inscricao.id} />
+          )}
           {inscricao && (
             <>
               <div className="retorno-divisor" />
