@@ -78,10 +78,13 @@ type Inscricao = {
   criado_em: string;
 };
 
+type TipoCupom = "valor" | "percentual";
+
 type Cupom = {
   id: number;
   codigo: string;
   desconto: number;
+  tipo: TipoCupom;
   validade: string | null;
   ativo: number;
   usos: number;
@@ -107,6 +110,15 @@ const formatarPreco = (valor: number) =>
 
 const formatarData = (data: string) => data.split("-").reverse().join("/");
 
+const formatarDescontoCupom = (cupom: Pick<Cupom, "tipo" | "desconto">) =>
+  cupom.tipo === "percentual"
+    ? `${cupom.desconto.toLocaleString("pt-BR")}%`
+    : formatarPreco(cupom.desconto);
+
+type RegraCupomForm = { tipo: TipoCupom; desconto: string; validade: string };
+
+const lerDesconto = (desconto: string) => Number(desconto.replace(",", "."));
+
 const formatarCpf = (cpf: string) =>
   cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
 
@@ -131,13 +143,21 @@ export default function AdminPage() {
   const [busca, setBusca] = useState("");
   const [atualizadoAs, setAtualizadoAs] = useState("");
   const [cupons, setCupons] = useState<Cupom[]>([]);
-  const [novoCupom, setNovoCupom] = useState({
+  const [novoCupom, setNovoCupom] = useState<
+    RegraCupomForm & { codigo: string }
+  >({
     codigo: "",
+    tipo: "valor",
     desconto: "",
     validade: "",
   });
   const [erroCupom, setErroCupom] = useState<string | null>(null);
   const [salvandoCupom, setSalvandoCupom] = useState(false);
+  const [edicaoCupom, setEdicaoCupom] = useState<
+    (RegraCupomForm & { id: number }) | null
+  >(null);
+  const [erroEdicaoCupom, setErroEdicaoCupom] = useState<string | null>(null);
+  const [salvandoEdicaoCupom, setSalvandoEdicaoCupom] = useState(false);
   const [pedidosCamisa, setPedidosCamisa] = useState<PedidoCamisa[]>([]);
   const [estoque, setEstoque] = useState<LinhaEstoque[]>([]);
   const [precoCamisa, setPrecoCamisa] = useState<PrecoCamisa | null>(null);
@@ -281,7 +301,8 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           codigo: novoCupom.codigo,
-          desconto: Number(novoCupom.desconto.replace(",", ".")),
+          tipo: novoCupom.tipo,
+          desconto: lerDesconto(novoCupom.desconto),
           validade: novoCupom.validade,
         }),
       });
@@ -291,9 +312,48 @@ export default function AdminPage() {
         return;
       }
       setCupons(data.cupons);
-      setNovoCupom({ codigo: "", desconto: "", validade: "" });
+      setNovoCupom({ codigo: "", tipo: "valor", desconto: "", validade: "" });
     } finally {
       setSalvandoCupom(false);
+    }
+  };
+
+  const abrirEdicaoCupom = (cupom: Cupom) => {
+    setErroEdicaoCupom(null);
+    setEdicaoCupom({
+      id: cupom.id,
+      tipo: cupom.tipo,
+      desconto: cupom.desconto.toLocaleString("pt-BR"),
+      validade: cupom.validade ?? "",
+    });
+  };
+
+  const salvarEdicaoCupom = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!edicaoCupom) {
+      return;
+    }
+    setErroEdicaoCupom(null);
+    setSalvandoEdicaoCupom(true);
+    try {
+      const response = await fetch(`/api/admin/cupons/${edicaoCupom.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tipo: edicaoCupom.tipo,
+          desconto: lerDesconto(edicaoCupom.desconto),
+          validade: edicaoCupom.validade || null,
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        setErroEdicaoCupom(data.erro ?? "Não foi possível salvar o cupom.");
+        return;
+      }
+      setEdicaoCupom(null);
+      await carregarCupons();
+    } finally {
+      setSalvandoEdicaoCupom(false);
     }
   };
 
@@ -1094,8 +1154,9 @@ export default function AdminPage() {
             <div>
               <div className="cupons-titulo display">Cupons de desconto</div>
               <div className="cupons-subtitulo">
-                Desconto em reais sobre o valor da inscrição. Sem data de
-                validade, o cupom vale enquanto estiver ativo.
+                Desconto em reais ou em porcentagem sobre o valor da
+                inscrição. Sem data de validade, o cupom vale enquanto estiver
+                ativo. Editar um cupom não muda inscrições já feitas.
               </div>
             </div>
           </div>
@@ -1116,7 +1177,24 @@ export default function AdminPage() {
               />
             </label>
             <label className="campo">
-              <span className="campo-rotulo">Desconto (R$)</span>
+              <span className="campo-rotulo">Tipo</span>
+              <select
+                value={novoCupom.tipo}
+                onChange={(event) =>
+                  setNovoCupom((previo) => ({
+                    ...previo,
+                    tipo: event.target.value as TipoCupom,
+                  }))
+                }
+              >
+                <option value="valor">Em reais (R$)</option>
+                <option value="percentual">Porcentagem (%)</option>
+              </select>
+            </label>
+            <label className="campo">
+              <span className="campo-rotulo">
+                Desconto ({novoCupom.tipo === "percentual" ? "%" : "R$"})
+              </span>
               <input
                 required
                 inputMode="decimal"
@@ -1127,7 +1205,7 @@ export default function AdminPage() {
                     desconto: event.target.value,
                   }))
                 }
-                placeholder="20"
+                placeholder={novoCupom.tipo === "percentual" ? "10" : "20"}
               />
             </label>
             <label className="campo">
@@ -1163,14 +1241,92 @@ export default function AdminPage() {
             <div className="cupons-vazio">Nenhum cupom cadastrado ainda.</div>
           ) : (
             <div className="cupons-lista">
-              {cupons.map((cupom) => (
+              {cupons.map((cupom) =>
+                edicaoCupom?.id === cupom.id ? (
+                  <form
+                    className="cupom-linha-admin cupom-edicao"
+                    key={cupom.id}
+                    onSubmit={salvarEdicaoCupom}
+                  >
+                    <div className="cupom-codigo display">{cupom.codigo}</div>
+                    <label className="campo">
+                      <span className="campo-rotulo">Tipo</span>
+                      <select
+                        value={edicaoCupom.tipo}
+                        onChange={(event) =>
+                          setEdicaoCupom({
+                            ...edicaoCupom,
+                            tipo: event.target.value as TipoCupom,
+                          })
+                        }
+                      >
+                        <option value="valor">Em reais (R$)</option>
+                        <option value="percentual">Porcentagem (%)</option>
+                      </select>
+                    </label>
+                    <label className="campo">
+                      <span className="campo-rotulo">
+                        Desconto (
+                        {edicaoCupom.tipo === "percentual" ? "%" : "R$"})
+                      </span>
+                      <input
+                        required
+                        inputMode="decimal"
+                        value={edicaoCupom.desconto}
+                        onChange={(event) =>
+                          setEdicaoCupom({
+                            ...edicaoCupom,
+                            desconto: event.target.value,
+                          })
+                        }
+                      />
+                    </label>
+                    <label className="campo">
+                      <span className="campo-rotulo">Validade (opcional)</span>
+                      <input
+                        type="date"
+                        value={edicaoCupom.validade}
+                        onChange={(event) =>
+                          setEdicaoCupom({
+                            ...edicaoCupom,
+                            validade: event.target.value,
+                          })
+                        }
+                      />
+                    </label>
+                    <div className="cupom-acoes">
+                      <button
+                        className="botao-vermelho"
+                        type="submit"
+                        disabled={salvandoEdicaoCupom}
+                      >
+                        {salvandoEdicaoCupom ? "Salvando..." : "Salvar"}
+                      </button>
+                      <button
+                        className="botao-contorno"
+                        type="button"
+                        onClick={() => setEdicaoCupom(null)}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                    {erroEdicaoCupom && (
+                      <div className="banner-erro cupom-edicao-erro">
+                        <div className="banner-erro-icone">!</div>
+                        <div className="banner-erro-titulo">
+                          {erroEdicaoCupom}
+                        </div>
+                      </div>
+                    )}
+                  </form>
+                ) : (
                 <div
                   className={`cupom-linha-admin ${cupom.ativo ? "" : "inativo"}`}
                   key={cupom.id}
                 >
                   <div className="cupom-codigo display">{cupom.codigo}</div>
                   <div className="cupom-desconto">
-                    −{formatarPreco(cupom.desconto)}
+                    −{formatarDescontoCupom(cupom)}
                   </div>
                   <div className="cupom-info">
                     {cupom.validade
@@ -1181,6 +1337,13 @@ export default function AdminPage() {
                     {cupom.usos} {cupom.usos === 1 ? "uso" : "usos"}
                   </div>
                   <div className="cupom-acoes">
+                    <button
+                      className="botao-contorno"
+                      type="button"
+                      onClick={() => abrirEdicaoCupom(cupom)}
+                    >
+                      Editar
+                    </button>
                     <button
                       className="botao-contorno"
                       type="button"
@@ -1197,7 +1360,8 @@ export default function AdminPage() {
                     </button>
                   </div>
                 </div>
-              ))}
+                ),
+              )}
             </div>
           )}
         </section>

@@ -7,6 +7,7 @@ import {
   arredondar,
   buscarCupom,
   normalizarCodigo,
+  validarRegra,
 } from "@/lib/cupom";
 import { inserirCupom, limparBanco } from "../helpers";
 
@@ -60,7 +61,70 @@ describe("buscarCupom", () => {
   });
 });
 
+describe("validarRegra", () => {
+  it("assume desconto em reais quando o tipo nao vem", () => {
+    assert.deepEqual(validarRegra({ desconto: 10.456 }), {
+      tipo: "valor",
+      desconto: 10.46,
+      validade: null,
+    });
+  });
+
+  it("aceita porcentagem de ate 100%", () => {
+    assert.deepEqual(
+      validarRegra({ tipo: "percentual", desconto: 100, validade: "2026-11-01" }),
+      { tipo: "percentual", desconto: 100, validade: "2026-11-01" },
+    );
+  });
+
+  it("recusa porcentagem acima de 100%", () => {
+    assert.deepEqual(validarRegra({ tipo: "percentual", desconto: 100.01 }), {
+      erro: "A porcentagem não pode passar de 100%",
+    });
+  });
+
+  it("aceita valor em reais acima de 100", () => {
+    assert.equal(
+      (validarRegra({ tipo: "valor", desconto: 150 }) as { desconto: number })
+        .desconto,
+      150,
+    );
+  });
+
+  it("recusa tipo desconhecido", () => {
+    assert.deepEqual(validarRegra({ tipo: "brinde", desconto: 10 }), {
+      erro: "Tipo de desconto inválido",
+    });
+  });
+
+  it("trata validade que nao e texto como sem validade", () => {
+    assert.equal(
+      (validarRegra({ desconto: 10, validade: null }) as { validade: null })
+        .validade,
+      null,
+    );
+  });
+});
+
 describe("aplicarCupom", () => {
+  it("desconta a porcentagem do valor da inscricao", () => {
+    inserirCupom({ codigo: "DEZPORCENTO", desconto: 10, tipo: "percentual" });
+    assert.deepEqual(aplicarCupom("DEZPORCENTO", 125), {
+      codigo: "DEZPORCENTO",
+      desconto: 12.5,
+      valorFinal: 112.5,
+    });
+  });
+
+  it("limita cupom de 100% ao valor minimo cobrado", () => {
+    inserirCupom({ codigo: "CORTESIA", desconto: 100, tipo: "percentual" });
+    assert.deepEqual(aplicarCupom("CORTESIA", 130), {
+      codigo: "CORTESIA",
+      desconto: 130 - VALOR_MINIMO,
+      valorFinal: VALOR_MINIMO,
+    });
+  });
+
   it("desconta o valor do cupom", () => {
     inserirCupom({ codigo: "TRILHA10", desconto: 10 });
     const resultado = aplicarCupom("trilha10", 130);

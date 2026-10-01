@@ -32,6 +32,8 @@ const SCHEMA = `
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     codigo TEXT NOT NULL UNIQUE,
     desconto REAL NOT NULL CHECK (desconto > 0),
+    -- 'valor' desconta reais; 'percentual' desconta % do valor da inscricao.
+    tipo TEXT NOT NULL DEFAULT 'valor' CHECK (tipo IN ('valor', 'percentual')),
     validade TEXT,
     ativo INTEGER NOT NULL DEFAULT 1,
     criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
@@ -156,6 +158,16 @@ const migrar = (database: DatabaseSync) => {
   database.exec(
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_inscricoes_kit_token ON inscricoes (kit_token)",
   );
+
+  // Cupom em porcentagem veio depois: todos os anteriores eram em reais.
+  const colunasCupom = database
+    .prepare("SELECT name FROM pragma_table_info('cupons')")
+    .all() as unknown as { name: string }[];
+  if (!colunasCupom.some((c) => c.name === "tipo")) {
+    database.exec(
+      "ALTER TABLE cupons ADD COLUMN tipo TEXT NOT NULL DEFAULT 'valor' CHECK (tipo IN ('valor', 'percentual'))",
+    );
+  }
 
   const semToken = database
     .prepare("SELECT id FROM inscricoes WHERE kit_token IS NULL")

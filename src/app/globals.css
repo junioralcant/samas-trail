@@ -3010,6 +3010,23 @@ a:hover {
   font-size: 11px;
 }
 
+.cupom-acoes .botao-vermelho {
+  padding: 8px 14px;
+  font-size: 11px;
+}
+
+.cupom-edicao {
+  align-items: end;
+}
+
+.cupom-edicao .cupom-codigo {
+  align-self: center;
+}
+
+.cupom-edicao-erro {
+  grid-column: 1 / -1;
+}
+
 .estado-vazio {
   padding: 64px 24px;
   display: flex;
@@ -3542,7 +3559,11 @@ a:hover {
   }
 
   .cupom-form {
-    grid-template-columns: 1fr 180px 200px auto;
+    grid-template-columns: 1fr 180px 140px 200px auto;
+  }
+
+  .cupom-edicao {
+    grid-template-columns: 1fr 180px 140px 200px auto;
   }
 
   .cupom-linha-admin {

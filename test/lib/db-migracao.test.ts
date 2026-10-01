@@ -28,6 +28,14 @@ const SCHEMA_ANTIGO = `
     mp_payment_id TEXT,
     criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
   );
+  CREATE TABLE cupons (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    codigo TEXT NOT NULL UNIQUE,
+    desconto REAL NOT NULL CHECK (desconto > 0),
+    validade TEXT,
+    ativo INTEGER NOT NULL DEFAULT 1,
+    criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+  );
 `;
 
 const caminho = join(mkdtempSync(join(tmpdir(), "corrida-antigo-")), "old.db");
@@ -40,6 +48,7 @@ bancoAntigo.exec(
    VALUES ('Atleta do 1o lote', '52998224725', 'a@a.com', '98', '1990-05-10',
            'feminino', 'M', '8km', 120, 'pago')`,
 );
+bancoAntigo.exec("INSERT INTO cupons (codigo, desconto) VALUES ('ANTIGO', 20)");
 bancoAntigo.close();
 
 process.env.DATABASE_PATH = caminho;
@@ -96,5 +105,13 @@ describe("migracao de um banco antigo", () => {
     assert.equal(linha.cpf, "52998224725");
     assert.equal(linha.valor, 120);
     assert.equal(linha.status_pagamento, "pago");
+  });
+
+  it("trata os cupons que ja existiam como desconto em reais", () => {
+    const cupom = getDb()
+      .prepare("SELECT tipo, desconto FROM cupons WHERE codigo = 'ANTIGO'")
+      .get() as unknown as Linha;
+    assert.equal(cupom.tipo, "valor");
+    assert.equal(cupom.desconto, 20);
   });
 });

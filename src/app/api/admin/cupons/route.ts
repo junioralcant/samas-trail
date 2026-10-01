@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
-import { CODIGO_REGEX, arredondar, normalizarCodigo } from "@/lib/cupom";
+import { CODIGO_REGEX, normalizarCodigo, validarRegra } from "@/lib/cupom";
 import { getDb } from "@/lib/db";
 import type { Cupom } from "@/lib/types";
 
@@ -31,7 +31,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ erro: "Não autorizado" }, { status: 401 });
   }
 
-  let payload: { codigo?: string; desconto?: number; validade?: string };
+  let payload: {
+    codigo?: string;
+    desconto?: number;
+    tipo?: string;
+    validade?: string;
+  };
   try {
     payload = await request.json();
   } catch {
@@ -46,17 +51,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const desconto = arredondar(Number(payload.desconto));
-  if (!Number.isFinite(desconto) || desconto <= 0) {
-    return NextResponse.json(
-      { erro: "O desconto deve ser maior que zero" },
-      { status: 400 },
-    );
-  }
-
-  const validade = payload.validade?.trim() || null;
-  if (validade && !/^\d{4}-\d{2}-\d{2}$/.test(validade)) {
-    return NextResponse.json({ erro: "Validade inválida" }, { status: 400 });
+  const regra = validarRegra(payload);
+  if ("erro" in regra) {
+    return NextResponse.json({ erro: regra.erro }, { status: 400 });
   }
 
   const db = getDb();
@@ -72,8 +69,8 @@ export async function POST(request: Request) {
   }
 
   db.prepare(
-    "INSERT INTO cupons (codigo, desconto, validade) VALUES (?, ?, ?)",
-  ).run(codigo, desconto, validade);
+    "INSERT INTO cupons (codigo, desconto, tipo, validade) VALUES (?, ?, ?, ?)",
+  ).run(codigo, regra.desconto, regra.tipo, regra.validade);
 
   return NextResponse.json({ cupons: listar() }, { status: 201 });
 }

@@ -89,10 +89,13 @@ export type NovaInscricaoPayload = {
   camisasExtras?: ItemCamisaPayload[];
 };
 
+export type TipoCupom = "valor" | "percentual";
+
 export type Cupom = {
   id: number;
   codigo: string;
   desconto: number;
+  tipo: TipoCupom;
   validade: string | null;
   ativo: number;
   criado_em: string;

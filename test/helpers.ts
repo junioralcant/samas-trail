@@ -128,15 +128,16 @@ export const buscarInscricao = (id: number): Inscricao | undefined =>
 export const inserirCupom = ({
   codigo = "TRILHA10",
   desconto = 10,
+  tipo = "valor" as Cupom["tipo"],
   validade = null as string | null,
   ativo = 1,
 } = {}): Cupom => {
   const db = getDb();
   const resultado = db
     .prepare(
-      "INSERT INTO cupons (codigo, desconto, validade, ativo) VALUES (?, ?, ?, ?)",
+      "INSERT INTO cupons (codigo, desconto, tipo, validade, ativo) VALUES (?, ?, ?, ?, ?)",
     )
-    .run(codigo, desconto, validade, ativo);
+    .run(codigo, desconto, tipo, validade, ativo);
   return db
     .prepare("SELECT * FROM cupons WHERE id = ?")
     .get(Number(resultado.lastInsertRowid)) as unknown as Cupom;

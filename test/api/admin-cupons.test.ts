@@ -2,6 +2,7 @@ import { strict as assert } from "node:assert";
 import { beforeEach, describe, it } from "node:test";
 import { GET, POST } from "@/app/api/admin/cupons/route";
 import { DELETE, PATCH } from "@/app/api/admin/cupons/[id]/route";
+import { getDb } from "@/lib/db";
 import type { Cupom } from "@/lib/types";
 import {
   ctx,
@@ -104,6 +105,44 @@ describe("POST /api/admin/cupons", () => {
     assert.equal(corpo.cupons[0].validade, "2026-11-01");
     assert.equal(corpo.cupons[0].ativo, 1);
     assert.equal(corpo.cupons[0].usos, 0);
+  });
+
+  it("cria cupom de desconto em reais quando o tipo nao vem", async () => {
+    const resposta = await criar({ codigo: "TRILHA10", desconto: 10 });
+    const corpo = (await resposta.json()) as { cupons: CupomComUsos[] };
+    assert.equal(corpo.cupons[0].tipo, "valor");
+  });
+
+  it("cria cupom em porcentagem", async () => {
+    const resposta = await criar({
+      codigo: "DEZPORCENTO",
+      tipo: "percentual",
+      desconto: 10,
+    });
+    const corpo = (await resposta.json()) as { cupons: CupomComUsos[] };
+    assert.equal(resposta.status, 201);
+    assert.equal(corpo.cupons[0].tipo, "percentual");
+    assert.equal(corpo.cupons[0].desconto, 10);
+  });
+
+  it("recusa porcentagem acima de 100%", async () => {
+    const resposta = await criar({
+      codigo: "DEMAIS",
+      tipo: "percentual",
+      desconto: 120,
+    });
+    assert.equal(resposta.status, 400);
+    assert.deepEqual(await resposta.json(), {
+      erro: "A porcentagem não pode passar de 100%",
+    });
+  });
+
+  it("recusa tipo desconhecido", async () => {
+    const resposta = await criar({ codigo: "BRINDE", tipo: "brinde", desconto: 1 });
+    assert.equal(resposta.status, 400);
+    assert.deepEqual(await resposta.json(), {
+      erro: "Tipo de desconto inválido",
+    });
   });
 
   it("aceita cupom sem validade", async () => {
@@ -209,6 +248,80 @@ describe("PATCH /api/admin/cupons/[id]", () => {
     const resposta = await alterar(cupom.id, {});
     assert.equal(resposta.status, 400);
     assert.deepEqual(await resposta.json(), { erro: "Nada para atualizar" });
+  });
+
+  it("muda a validade sem mexer no resto", async () => {
+    const cupom = inserirCupom({ codigo: "TRILHA10", desconto: 15 });
+
+    const resposta = await alterar(cupom.id, { validade: "2026-12-31" });
+
+    assert.equal(resposta.status, 200);
+    const [editado] = (await listar()).corpo.cupons;
+    assert.equal(editado.validade, "2026-12-31");
+    assert.equal(editado.desconto, 15);
+    assert.equal(editado.tipo, "valor");
+    assert.equal(editado.ativo, 1);
+  });
+
+  it("tira a validade quando ela vem nula ou em branco", async () => {
+    for (const validade of [null, "  "]) {
+      const cupom = inserirCupom({
+        codigo: `COM-DATA-${String(validade).trim() || "VAZIA"}`,
+        validade: "2026-11-01",
+      });
+      await alterar(cupom.id, { validade });
+      const editado = (await listar()).corpo.cupons.find(
+        (c) => c.id === cupom.id,
+      );
+      assert.equal(editado?.validade, null);
+    }
+  });
+
+  it("troca de reais para porcentagem com o novo desconto", async () => {
+    const cupom = inserirCupom({ codigo: "TRILHA10", desconto: 10 });
+
+    await alterar(cupom.id, { tipo: "percentual", desconto: 15.555 });
+
+    const [editado] = (await listar()).corpo.cupons;
+    assert.equal(editado.tipo, "percentual");
+    assert.equal(editado.desconto, 15.56);
+  });
+
+  it("nao deixa trocar para porcentagem um desconto acima de 100", async () => {
+    const cupom = inserirCupom({ codigo: "CINQUENTA", desconto: 150 });
+
+    const resposta = await alterar(cupom.id, { tipo: "percentual" });
+
+    assert.equal(resposta.status, 400);
+    assert.deepEqual(await resposta.json(), {
+      erro: "A porcentagem não pode passar de 100%",
+    });
+    assert.equal((await listar()).corpo.cupons[0].tipo, "valor");
+  });
+
+  it("recusa validade, desconto ou tipo invalidos na edicao", async () => {
+    const cupom = inserirCupom();
+    for (const [corpo, erro] of [
+      [{ validade: "31/12/2026" }, "Validade inválida"],
+      [{ desconto: 0 }, "O desconto deve ser maior que zero"],
+      [{ tipo: "brinde" }, "Tipo de desconto inválido"],
+    ] as const) {
+      const resposta = await alterar(cupom.id, corpo);
+      assert.equal(resposta.status, 400);
+      assert.deepEqual(await resposta.json(), { erro });
+    }
+  });
+
+  it("nao mexe nas inscricoes ja feitas com o cupom", async () => {
+    const cupom = inserirCupom({ codigo: "TRILHA10", desconto: 10 });
+    const inscricao = inserirInscricao({ cupom_codigo: "TRILHA10", desconto: 10 });
+
+    await alterar(cupom.id, { tipo: "percentual", desconto: 50 });
+
+    const linha = getDb()
+      .prepare("SELECT desconto FROM inscricoes WHERE id = ?")
+      .get(inscricao.id) as unknown as { desconto: number };
+    assert.equal(linha.desconto, 10);
   });
 
   it("responde 404 para cupom inexistente", async () => {
