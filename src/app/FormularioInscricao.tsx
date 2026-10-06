@@ -8,6 +8,7 @@ import { ehMenorDeIdade } from "@/lib/idade";
 import ModalTermo from "./ModalTermo";
 import VisualizadorKit from "./VisualizadorKit";
 import SecaoPatrocinadores from "./SecaoPatrocinadores";
+import { patrocinadoresDaCota } from "./patrocinadores";
 import { SEPARACAO_KIT } from "./camisaExtra";
 import { GaleriaCamisa, SeloPromocao } from "./CamisaExtraPecas";
 import SeletorCamisas, {
@@ -16,6 +17,11 @@ import SeletorCamisas, {
   type Selecao,
 } from "./SeletorCamisas";
 import { ITENS_KIT } from "./itensKit";
+
+// Logos master na base do banner. Sem logo o nome nao cabe na faixa: fica de fora.
+const MASTERS_HERO = patrocinadoresDaCota("master").filter(
+  (patrocinador) => patrocinador.logo,
+);
 
 type Distancia = "8km" | "18km";
 
@@ -284,6 +290,35 @@ export default function FormularioInscricao({
               🎟️ {loteAtual} · inscrições abertas
             </div>
           </div>
+          {MASTERS_HERO.length > 0 && (
+            <a
+              className="hero-patrocinadores"
+              href="#patrocinadores"
+              aria-label="Ver os patrocinadores master"
+            >
+              <span className="hero-patrocinadores-rotulo">
+                Patrocínio master
+              </span>
+              <span className="hero-patrocinadores-logos">
+                {MASTERS_HERO.map((patrocinador) => (
+                  <span
+                    key={patrocinador.id}
+                    className={
+                      patrocinador.placa === "clara"
+                        ? "hero-patrocinador-placa hero-placa-clara"
+                        : "hero-patrocinador-placa hero-placa-escura"
+                    }
+                  >
+                    <img
+                      className="hero-patrocinador-logo"
+                      src={patrocinador.logo}
+                      alt={`Logo ${patrocinador.nome}`}
+                    />
+                  </span>
+                ))}
+              </span>
+            </a>
+          )}
         </div>
       </section>
 

@@ -50,7 +50,60 @@ export const ROTULO_FAIXA: Record<CotaPatrocinio, string> = {
 //   whatsapp: "5599999999999",
 // }
 // Vazio esconde a secao inteira na home.
-export const PATROCINADORES: Patrocinador[] = [];
+export const PATROCINADORES: Patrocinador[] = [
+  {
+    id: "christian",
+    cota: "master",
+    nome: "Loja Christian",
+    nomeCurto: "Christian",
+    descricao:
+      "Na Avenida Rodoviária, 97, ao lado da Loja do Pedreiro, em Alto Alegre do Maranhão.",
+    logo: "/patrocinadores/christian.png",
+    placa: "clara",
+    instagram: "lojaschristian",
+    endereco:
+      "https://www.google.com/maps/search/?api=1&query=Avenida%20Rodovi%C3%A1ria%2C%2097%2C%20Alto%20Alegre%20do%20Maranh%C3%A3o%20-%20MA",
+  },
+  {
+    id: "sos",
+    cota: "master",
+    nome: "SOS Chinelos e Calçados",
+    nomeCurto: "SOS",
+    descricao:
+      "Chinelos e calçados em duas lojas no centro: Praça do Mercado, 19, e Avenida Antônio Pereira Aragão, 1.480.",
+    logo: "/patrocinadores/sos.png",
+    placa: "clara",
+    instagram: "soschinelos",
+    endereco:
+      "https://www.google.com/maps/search/?api=1&query=Pra%C3%A7a%20do%20Mercado%2C%2019%2C%20Centro%2C%20S%C3%A3o%20Mateus%20do%20Maranh%C3%A3o%20-%20MA",
+  },
+  {
+    id: "casadasvariedades",
+    cota: "master",
+    nome: "Casa das Variedades",
+    nomeCurto: "Casa das Variedades",
+    descricao:
+      "Na Avenida Antônio Pereira Aragão, 1.788, no centro de São Mateus do Maranhão.",
+    logo: "/patrocinadores/casa-das-variedades.jpg",
+    placa: "clara",
+    instagram: "casadasviredades",
+    endereco:
+      "https://www.google.com/maps/search/?api=1&query=Avenida%20Ant%C3%B4nio%20Pereira%20Arag%C3%A3o%2C%201788%2C%20S%C3%A3o%20Mateus%20do%20Maranh%C3%A3o%20-%20MA",
+  },
+  {
+    id: "lupo",
+    cota: "master",
+    nome: "Lojazul Lupo",
+    nomeCurto: "Lupo",
+    descricao:
+      "Na Avenida Antônio Pereira Aragão, 960, em São Mateus do Maranhão.",
+    logo: "/patrocinadores/lupo.png",
+    placa: "escura",
+    instagram: "luposaomateus",
+    endereco:
+      "https://www.google.com/maps/search/?api=1&query=Avenida%20Ant%C3%B4nio%20Pereira%20Arag%C3%A3o%2C%20960%2C%20S%C3%A3o%20Mateus%20do%20Maranh%C3%A3o%20-%20MA",
+  },
+];
 
 export const patrocinadoresDaCota = (cota: CotaPatrocinio) =>
   PATROCINADORES.filter((patrocinador) => patrocinador.cota === cota);

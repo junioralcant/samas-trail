@@ -241,6 +241,61 @@ a:hover {
   letter-spacing: 0.04em;
 }
 
+/* Faixa das logos master na base do banner; leva para #patrocinadores. */
+.hero-patrocinadores {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  margin-top: 12px;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.hero-patrocinadores:hover {
+  opacity: 0.88;
+}
+
+.hero-patrocinadores-rotulo {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cinza);
+}
+
+.hero-patrocinadores-logos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.hero-patrocinador-placa {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 7px 12px;
+  border-radius: 10px;
+}
+
+.hero-placa-clara {
+  background: #f4f4f1;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.hero-placa-escura {
+  background: #0d0d0d;
+  border: 1px solid var(--borda-suave);
+}
+
+.hero-patrocinador-logo {
+  max-width: 72px;
+  max-height: 30px;
+  object-fit: contain;
+}
+
 .divisor-rasgado {
   height: 12px;
   background: var(--vermelho);
@@ -3184,6 +3239,30 @@ a:hover {
   .chip {
     padding: 11px 20px;
     font-size: 14px;
+  }
+
+  .hero-patrocinadores {
+    gap: 11px;
+    margin-top: 16px;
+  }
+
+  .hero-patrocinadores-rotulo {
+    font-size: 11px;
+  }
+
+  .hero-patrocinadores-logos {
+    gap: 12px;
+  }
+
+  .hero-patrocinador-placa {
+    height: 54px;
+    padding: 9px 16px;
+    border-radius: 12px;
+  }
+
+  .hero-patrocinador-logo {
+    max-width: 110px;
+    max-height: 36px;
   }
 
   .divisor-rasgado {
